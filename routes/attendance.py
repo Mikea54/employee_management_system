@@ -90,7 +90,7 @@ def clock_in():
     existing_record = Attendance.query.filter_by(
         employee_id=current_user.employee.id,
         date=today
-    ).first()
+    ).order_by(Attendance.id.desc()).first()
     
     try:
         # Create or update attendance record
