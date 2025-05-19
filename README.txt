@@ -123,7 +123,14 @@ server {
 }
 ```
 
-### 6. Default Administrative Access
+### 6. Running Tests
+
+Run the unit tests using `pytest`:
+```bash
+pytest
+```
+
+### 7. Default Administrative Access
 
 When you first set up the application, a default admin account is created:
 - Username: admin
