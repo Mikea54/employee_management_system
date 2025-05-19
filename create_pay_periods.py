@@ -22,16 +22,17 @@ def create_initial_pay_periods(start_date_str=None):
         
         # Create pay periods for the current year
         today = datetime.now().date()
+        current_year = today.year
         
         # Use provided start date or find the first Monday of the year
         if start_date_str:
             try:
                 first_monday = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 print(f"Using provided start date: {first_monday}")
+                current_year = first_monday.year
             except ValueError:
                 print(f"Invalid date format: {start_date_str}. Using default.")
                 # Fall back to default (first Monday of year)
-                current_year = today.year
                 first_day = datetime(current_year, 1, 1).date()
                 days_to_monday = (7 - first_day.weekday()) % 7  # 0 is Monday in Python
                 if days_to_monday == 0:  # If it's already Monday
@@ -40,7 +41,6 @@ def create_initial_pay_periods(start_date_str=None):
                     first_monday = first_day + timedelta(days=days_to_monday)
         else:
             # Default to first Monday of the current year
-            current_year = today.year
             first_day = datetime(current_year, 1, 1).date()
             days_to_monday = (7 - first_day.weekday()) % 7  # 0 is Monday in Python
             if days_to_monday == 0:  # If it's already Monday
