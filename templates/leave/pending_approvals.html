@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+
+{% block title %}Pending Leave Approvals - Employee Management System{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .approval-card {
+        transition: all 0.3s;
+    }
+    .approval-card:hover {
+        transform: translateY(-5px);
+    }
+    .approval-actions {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Pending Leave Approvals</h1>
+        <div>
+            <a href="{{ url_for('leave.manage') }}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> All Leave Requests
+            </a>
+        </div>
+    </div>
+
+    <!-- Pending Approvals -->
+    <div class="row">
+        {% if pending_requests %}
+            {% for request, employee, leave_type in pending_requests %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow approval-card">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold">{{ employee.full_name }}</h6>
+                        <span class="badge bg-warning px-3 py-2">Pending</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Leave Type:</strong>
+                                <span>{{ leave_type.name }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Department:</strong>
+                                <span>{{ employee.department.name if employee.department else 'N/A' }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Dates:</strong>
+                                <span>{{ request.start_date.strftime('%b %d') }} - {{ request.end_date.strftime('%b %d, %Y') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Duration:</strong>
+                                {% set days = (request.end_date - request.start_date).days + 1 %}
+                                {% set hours = days * 8 %}
+                                <span>{{ hours }} hours ({{ days }} day(s))</span>
+                            </div>
+                            
+                            {% set balance = leave_balances.get((employee.id, leave_type.id)) %}
+                            {% if balance %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Leave Balance:</strong>
+                                <span class="{{ 'text-danger fw-bold' if balance.remaining_hours < ((request.end_date - request.start_date).days + 1) * 8 }}">
+                                    {{ balance.remaining_hours }} / {{ balance.total_hours }} hours
+                                </span>
+                            </div>
+                            {% if balance.remaining_hours < ((request.end_date - request.start_date).days + 1) * 8 %}
+                            <div class="alert alert-warning mt-2 py-2 px-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Request exceeds available balance
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="alert alert-warning mt-2 py-2 px-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i> No leave balance found
+                            </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Requested On:</strong>
+                                <span>{{ request.created_at.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                            {% if leave_balances and request.id in leave_balances %}
+                                {% if leave_balances[request.id] is mapping %}
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>Leave Balance:</strong>
+                                        <span>{{ leave_balances[request.id].remaining_hours }} hours available</span>
+                                    </div>
+                                {% else %}
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>Leave Balance:</strong>
+                                        <span>{{ leave_balances[request.id].remaining_hours }} hours available</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>Total Allowance:</strong>
+                                        <span>{{ leave_balances[request.id].total_hours }} hours</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>Used:</strong>
+                                        <span>{{ leave_balances[request.id].used_hours }} hours</span>
+                                    </div>
+                                    {% if ((request.end_date - request.start_date).days + 1) * 8 > leave_balances[request.id].remaining_hours %}
+                                        <div class="alert alert-warning mt-1 mb-1 py-1 px-2">
+                                            <small><i class="fas fa-exclamation-triangle"></i> This request exceeds the employee's available balance.</small>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Reason:</strong>
+                            <p class="mt-1">{{ request.reason }}</p>
+                        </div>
+                        
+                        <div class="approval-actions mt-3">
+                            <form action="{{ url_for('leave.approve_request', request_id=request.id) }}" method="post" class="flex-grow-1">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-check me-2"></i> Approve
+                                </button>
+                            </form>
+                            <form action="{{ url_for('leave.reject_request', request_id=request.id) }}" method="post" class="flex-grow-1">
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-times me-2"></i> Reject
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+                        <h4>No Pending Leave Requests</h4>
+                        <p class="text-muted">All leave requests have been processed.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Additional Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Approval Guidelines</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> Please follow company policy when approving leave requests.
+            </div>
+            
+            <h5 class="mb-3">Approval Considerations:</h5>
+            <ul>
+                <li>Check team coverage during the requested leave period.</li>
+                <li>Verify if any critical project deadlines conflict with the leave dates.</li>
+                <li>Consider previously approved leaves for other team members in the same period.</li>
+                <li>Ensure the employee has sufficient leave balance.</li>
+                <li>For extended leaves (more than 5 consecutive days), additional approval may be required.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leave.js') }}"></script>
+{% endblock %}

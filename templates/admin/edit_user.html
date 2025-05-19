@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit User - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Edit User</h1>
+        <div>
+            <a href="{{ url_for('admin.user_management') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Edit User Card -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">User Information</h6>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.edit_user', user_id=user.id) }}" method="post" class="needs-validation" novalidate>
+                        <!-- User Details -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label form-required">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                            <div class="invalid-feedback">Please provide a username.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label form-required">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                            <div class="invalid-feedback">Please provide a valid email.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="role_id" class="form-label form-required">Role</label>
+                            <select class="form-select" id="role_id" name="role_id" required>
+                                <option value="" disabled>Select Role</option>
+                                {% for role in roles %}
+                                <option value="{{ role.id }}" {% if role.id == user.role_id %}selected{% endif %}>
+                                    {{ role.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Please select a role.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">Active</label>
+                            <small class="form-text text-muted d-block">Inactive users cannot login to the system.</small>
+                        </div>
+                        
+                        <!-- User Information -->
+                        <div class="mb-3">
+                            <h6 class="mb-2">Account Information</h6>
+                            <div class="card bg-secondary mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Created:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.user_management') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        
+        // Fetch all forms we want to apply validation to
+        var forms = document.querySelectorAll('.needs-validation');
+        
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %}

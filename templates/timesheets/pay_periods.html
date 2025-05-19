@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block title %}Pay Period Management - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Pay Period Management</h1>
+        <div>
+            <a href="{{ url_for('timesheets.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Timesheets
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Create Pay Period Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Create New Pay Period</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('timesheets.create_pay_period') }}">
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                            <div class="form-text">First day of the pay period</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                            <div class="form-text">Last day of the pay period</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i> Create Pay Period
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Pay Period Guidelines -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Pay periods should be two weeks long (14 days).</li>
+                        <li>Ideally, start on Monday and end on Sunday.</li>
+                        <li>Avoid overlapping with existing pay periods.</li>
+                        <li>Once a pay period is closed, it cannot be reopened.</li>
+                        <li>Employees cannot submit timesheets for closed pay periods.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pay Period List Card -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">All Pay Periods</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" href="#" id="export-csv">CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="payPeriodsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for period in pay_periods %}
+                                <tr class="{% if period.is_current %}table-active{% endif %}">
+                                    <td>{{ period.id }}</td>
+                                    <td>{{ period.start_date.strftime('%m/%d/%Y') }}</td>
+                                    <td>{{ period.end_date.strftime('%m/%d/%Y') }}</td>
+                                    <td>
+                                        <span class="badge 
+                                        {% if period.status == 'Open' %}bg-success{% 
+                                        elif period.status == 'Closed' %}bg-danger{% 
+                                        else %}bg-warning{% endif %}">
+                                            {{ period.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ period.created_at.strftime('%m/%d/%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('timesheets.period_timesheets', period_id=period.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-search"></i> View
+                                        </a>
+                                        {% if period.status == 'Open' %}
+                                        <form method="post" action="{{ url_for('timesheets.close_pay_period', period_id=period.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to close this pay period? This will prevent further timesheet submissions.')">
+                                                <i class="fas fa-lock"></i> Close
+                                            </button>
+                                        </form>
+                                        {% elif period.status == 'Closed' %}
+                                        <form method="post" action="{{ url_for('timesheets.reopen_pay_period', period_id=period.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to reopen this pay period?')">
+                                                <i class="fas fa-unlock"></i> Reopen
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        
+                                        <!-- Delete pay period button -->
+                                        <form method="post" action="{{ url_for('timesheets.delete_pay_period', period_id=period.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to DELETE this pay period? This will remove all associated timesheet data and CANNOT be undone.')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date values for new pay period
+    function setDefaultDates() {
+        const today = new Date();
+        
+        // Find next Monday for start date
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const daysUntilNextMonday = dayOfWeek === 0 ? 1 : (dayOfWeek === 1 ? 7 : 8 - dayOfWeek);
+        const nextMonday = new Date(today);
+        nextMonday.setDate(today.getDate() + daysUntilNextMonday);
+        
+        // Set end date to 14 days later (for a two-week period)
+        const endDate = new Date(nextMonday);
+        endDate.setDate(nextMonday.getDate() + 14);
+        
+        // Format dates for input elements
+        document.getElementById('start_date').value = formatDateForInput(nextMonday);
+        document.getElementById('end_date').value = formatDateForInput(endDate);
+    }
+    
+    // Format date for input field (YYYY-MM-DD)
+    function formatDateForInput(date) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${date.getFullYear()}-${month}-${day}`;
+    }
+    
+    // Export to CSV
+    document.getElementById('export-csv').addEventListener('click', function(e) {
+        e.preventDefault();
+        exportTableToCSV('payPeriodsTable', 'pay_periods.csv');
+    });
+    
+    // Helper function to export table as CSV
+    function exportTableToCSV(tableId, filename) {
+        const table = document.getElementById(tableId);
+        const rows = table.querySelectorAll('tr');
+        const csv = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Get text content and remove actions column
+                if (j !== 5) {
+                    let text = cols[j].innerText.replace(/"/g, '""');
+                    row.push('"' + text + '"');
+                }
+            }
+            csv.push(row.join(','));
+        }
+        
+        // Download CSV file
+        const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+        const downloadLink = document.createElement('a');
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+    
+    // Initialize page
+    setDefaultDates();
+    
+    // Update end date when start date changes
+    document.getElementById('start_date').addEventListener('change', function() {
+        const startDate = new Date(this.value);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 13); // 14 day period
+        document.getElementById('end_date').value = formatDateForInput(endDate);
+    });
+});
+</script>
+{% endblock %}

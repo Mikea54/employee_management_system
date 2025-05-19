@@ -1,0 +1,119 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance Tracking - Employee Management System{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .time-card {
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    .time-card:hover {
+        transform: translateY(-5px);
+    }
+    .clock-display {
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .attendance-status {
+        font-size: 1.2rem;
+    }
+    .clock-btn {
+        min-width: 150px;
+        transition: all 0.2s;
+    }
+    .clock-btn:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Attendance Tracking</h1>
+        <div>
+            <a href="{{ url_for('attendance.my_attendance') }}" class="btn btn-info">
+                <i class="fas fa-history"></i> My Attendance History
+            </a>
+            {% if current_user.role.name in ['Admin', 'HR', 'Manager'] %}
+            <a href="{{ url_for('attendance.manage_attendance') }}" class="btn btn-primary ml-2">
+                <i class="fas fa-clipboard-list"></i> Manage Attendance
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Time Clock Card -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4 time-card">
+                <div class="card-header py-3 text-center">
+                    <h6 class="m-0 fw-bold">Time Clock</h6>
+                </div>
+                <div class="card-body text-center py-5">
+                    <!-- Current Time Display -->
+                    <div class="mb-4">
+                        <div class="text-muted mb-2">Current Date & Time</div>
+                        <div id="currentTime" class="clock-display"></div>
+                    </div>
+
+                    <!-- Attendance Status -->
+                    <div class="mb-4">
+                        <div class="text-muted mb-2">Today's Status</div>
+                        <div id="attendanceStatus" class="attendance-status mb-3">
+                            <span class="badge bg-secondary">Checking Status...</span>
+                        </div>
+                    </div>
+
+                    <!-- Clock In/Out Buttons -->
+                    <div class="d-flex justify-content-center gap-3">
+                        <form action="{{ url_for('attendance.clock_in') }}" method="post">
+                            <button id="clockInBtn" type="submit" class="btn btn-success btn-lg clock-btn">
+                                <i class="fas fa-sign-in-alt me-2"></i> Clock In
+                            </button>
+                        </form>
+                        
+                        <form action="{{ url_for('attendance.clock_out') }}" method="post">
+                            <button id="clockOutBtn" type="submit" class="btn btn-danger btn-lg clock-btn">
+                                <i class="fas fa-sign-out-alt me-2"></i> Clock Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Guidelines -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Attendance Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Please ensure you clock in when starting work and clock out when finishing for the day.
+                    </div>
+                    
+                    <h5 class="mb-3">Important Notes:</h5>
+                    <ul>
+                        <li>Standard working hours are from 9:00 AM to 5:00 PM.</li>
+                        <li>Clock in after 9:15 AM will be marked as "Late".</li>
+                        <li>If you forget to clock in/out, please contact HR.</li>
+                        <li>Working remotely? Use the same system to record attendance.</li>
+                        <li>For technical issues, please contact the IT department.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+{% endblock %}

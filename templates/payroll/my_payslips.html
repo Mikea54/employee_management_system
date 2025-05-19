@@ -1,0 +1,264 @@
+{% extends "layout.html" %}
+
+{% block title %}My Payslips{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">My Payslips</h1>
+        <a href="{{ url_for('payroll.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Payroll Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Payslips Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Payslips History</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-filter me-1"></i> Filter
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" href="{{ url_for('payroll.my_payslips') }}">All Payslips</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('payroll.my_payslips') }}?year={{ current_date.year }}">This Year</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('payroll.my_payslips') }}?status=Paid">Paid Only</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('payroll.my_payslips') }}?status=Pending">Pending Only</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if payslips %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Pay Period</th>
+                                    <th>Payment Date</th>
+                                    <th>Gross Pay</th>
+                                    <th>Net Pay</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payslip in payslips %}
+                                <tr>
+                                    <td>{{ payslip.payroll_period.start_date.strftime('%b %d') }} - {{ payslip.payroll_period.end_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ payslip.payroll_period.payment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>${{ "{:,.2f}".format(payslip.gross_pay) }}</td>
+                                    <td>${{ "{:,.2f}".format(payslip.net_pay) }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payslip.status == 'Paid' else 'warning' if payslip.status == 'Approved' else 'secondary' }}">
+                                            {{ payslip.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('payroll.view_payslip', payroll_id=payslip.id) }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if payslip.status == 'Paid' %}
+                                        <a href="{{ url_for('payroll.download_payslip', payroll_id=payslip.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No payslips found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Year-to-Date Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Year-to-Date Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="mb-0 fw-bold">Total Gross</h5>
+                                    <p class="display-6 text-primary">$
+                                        {% set ytd_gross = 0 %}
+                                        {% for payslip in payslips if payslip.status == 'Paid' and payslip.created_at.year == current_date.year %}
+                                            {% set ytd_gross = ytd_gross + payslip.gross_pay %}
+                                        {% endfor %}
+                                        {{ "{:,.2f}".format(ytd_gross) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="mb-0 fw-bold">Total Net</h5>
+                                    <p class="display-6 text-success">$
+                                        {% set ytd_net = 0 %}
+                                        {% for payslip in payslips if payslip.status == 'Paid' and payslip.created_at.year == current_date.year %}
+                                            {% set ytd_net = ytd_net + payslip.net_pay %}
+                                        {% endfor %}
+                                        {{ "{:,.2f}".format(ytd_net) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="mb-0 fw-bold">Total Tax</h5>
+                                    <p class="display-6 text-danger">$
+                                        {% set ytd_tax = 0 %}
+                                        {% for payslip in payslips if payslip.status == 'Paid' and payslip.created_at.year == current_date.year %}
+                                            {% set ytd_tax = ytd_tax + payslip.tax_amount %}
+                                        {% endfor %}
+                                        {{ "{:,.2f}".format(ytd_tax) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="mb-0 fw-bold">Pay Periods</h5>
+                                    <p class="display-6 text-info">
+                                        {% set period_count = 0 %}
+                                        {% for payslip in payslips if payslip.status == 'Paid' and payslip.created_at.year == current_date.year %}
+                                            {% set period_count = period_count + 1 %}
+                                        {% endfor %}
+                                        {{ period_count }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Employee Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Employee Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if employee.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profile_images/' + employee.profile_image) }}" alt="{{ employee.full_name }}" class="rounded-circle" width="100" height="100">
+                        {% else %}
+                            <div class="avatar-initials mx-auto" style="width: 100px; height: 100px; line-height: 100px; font-size: 2.5rem;">{{ employee.initials }}</div>
+                        {% endif %}
+                        <h5 class="mt-3 mb-0">{{ employee.full_name }}</h5>
+                        <p class="text-muted">{{ employee.job_title }}</p>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Employee ID</span>
+                            <span class="fw-bold">{{ employee.employee_id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Department</span>
+                            <span class="fw-bold">{{ employee.department.name if employee.department else 'N/A' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Base Salary</span>
+                            <span class="fw-bold">${{ "{:,.2f}".format(employee.base_salary) }} {{ employee.salary_type }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Pay Schedule</span>
+                            <span class="fw-bold">Bi-weekly</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ url_for('payroll.my_compensation') }}" class="btn btn-primary">
+                            <i class="fas fa-chart-pie me-2"></i> View Compensation Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Payroll Period -->
+            {% if current_period %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Current Pay Period</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <div class="mb-2">
+                            <strong>Period Dates:</strong><br>
+                            {{ current_period.start_date.strftime('%b %d, %Y') }} - {{ current_period.end_date.strftime('%b %d, %Y') }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Payment Date:</strong><br>
+                            {{ current_period.payment_date.strftime('%b %d, %Y') }}
+                        </div>
+                        <div>
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-{{ 'success' if current_period.status == 'Completed' else 'warning' if current_period.status == 'Processing' else 'secondary' }}">
+                                {{ current_period.status }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {% set current_payslip = None %}
+                    {% for payslip in payslips %}
+                        {% if payslip.payroll_period_id == current_period.id %}
+                            {% set current_payslip = payslip %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if current_payslip %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold">Your Current Payslip</h6>
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>Status:</div>
+                                <span class="badge bg-{{ 'success' if current_payslip.status == 'Paid' else 'warning' if current_payslip.status == 'Approved' else 'secondary' }}">
+                                    {{ current_payslip.status }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>Gross Pay:</div>
+                                <div>${{ "{:,.2f}".format(current_payslip.gross_pay) }}</div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>Net Pay:</div>
+                                <div>${{ "{:,.2f}".format(current_payslip.net_pay) }}</div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-3">
+                                <a href="{{ url_for('payroll.view_payslip', payroll_id=current_payslip.id) }}" class="btn btn-sm btn-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> No payslip has been generated for this period yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

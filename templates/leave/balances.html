@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Leave Balances - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Manage Leave Balances</h1>
+        <div>
+            <a href="{{ url_for('leave.manage') }}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Leave Requests
+            </a>
+            <a href="{{ url_for('leave.leave_types') }}" class="btn btn-info">
+                <i class="fas fa-tags"></i> Leave Types
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Filter Leave Balances</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{{ url_for('leave.manage_balances') }}" class="mb-0">
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <label for="employee_id" class="form-label">Employee</label>
+                        <select class="form-select" id="employee_id" name="employee_id">
+                            <option value="">All Employees</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}" {% if current_filters.employee_id == employee.id %}selected{% endif %}>
+                                {{ employee.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label for="leave_type_id" class="form-label">Leave Type</label>
+                        <select class="form-select" id="leave_type_id" name="leave_type_id">
+                            <option value="">All Leave Types</option>
+                            {% for leave_type in leave_types %}
+                            <option value="{{ leave_type.id }}" {% if current_filters.leave_type_id == leave_type.id %}selected{% endif %}>
+                                {{ leave_type.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label for="year" class="form-label">Year</label>
+                        <select class="form-select" id="year" name="year">
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if current_filters.year == y %}selected{% endif %}>
+                                {{ y }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create/Update Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Create or Update Leave Balance</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('leave.create_balance') }}">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="balance_employee_id" class="form-label">Employee</label>
+                        <select class="form-select" id="balance_employee_id" name="employee_id" required>
+                            <option value="">Select Employee</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">
+                                {{ employee.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="balance_leave_type_id" class="form-label">Leave Type</label>
+                        <select class="form-select" id="balance_leave_type_id" name="leave_type_id" required>
+                            <option value="">Select Leave Type</option>
+                            {% for leave_type in leave_types %}
+                            <option value="{{ leave_type.id }}">
+                                {{ leave_type.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="balance_year" class="form-label">Year</label>
+                        <select class="form-select" id="balance_year" name="year" required>
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if y == current_filters.year %}selected{% endif %}>
+                                {{ y }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="total_hours" class="form-label">Total Hours</label>
+                        <input type="number" class="form-control" id="total_hours" name="total_hours" step="0.5" min="0" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="used_hours" class="form-label">Used Hours</label>
+                        <input type="number" class="form-control" id="used_hours" name="used_hours" step="0.5" min="0" value="0">
+                    </div>
+                    <div class="col-md-3 mt-3">
+                        <label for="accrual_rate" class="form-label">Accrual Rate (hours per 40 hours worked)</label>
+                        <input type="number" class="form-control" id="accrual_rate" name="accrual_rate" step="0.01" min="0" value="2.80">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save Balance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Balance Table -->
+    <!-- Initialize All Balances -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Initialize Leave Balances</h6>
+        </div>
+        <div class="card-body">
+            <p>This will create leave balances for all active employees who don't have them yet.</p>
+            <form method="post" action="{{ url_for('leave.initialize_balances') }}" class="row g-3">
+                <div class="col-md-4">
+                    <label for="init_year" class="form-label">Year</label>
+                    <select class="form-select" id="init_year" name="year">
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if y == current_filters.year %}selected{% endif %}>
+                            {{ y }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="default_hours" class="form-label">Default Hours</label>
+                    <input type="number" class="form-control" id="default_hours" name="default_hours" value="160" step="0.5" min="0">
+                </div>
+                <div class="col-md-3">
+                    <label for="accrual_rate" class="form-label">Accrual Rate</label>
+                    <input type="number" class="form-control" id="accrual_rate" name="accrual_rate" value="2.80" step="0.01" min="0">
+                    <small class="text-muted">Hours per 40 hours worked</small>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-magic"></i> Initialize All Balances
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">Leave Balances</h6>
+            {% if current_filters.year %}
+            <span class="badge bg-primary">{{ current_filters.year }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if balances %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="balanceTable">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Leave Type</th>
+                                <th>Total Hours</th>
+                                <th>Used Hours</th>
+                                <th>Remaining Hours</th>
+                                <th>Accrual Rate</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for balance, employee, leave_type in balances %}
+                            <tr>
+                                <td>{{ employee.first_name ~ ' ' ~ employee.last_name }}</td>
+                                <td>{{ employee.department.name if employee.department and employee.department.name else 'N/A' }}</td>
+                                <td>{{ leave_type.name }}</td>
+                                <td>{{ balance.total_hours }}</td>
+                                <td>{{ balance.used_hours }}</td>
+                                <td>{{ balance.remaining_hours }}</td>
+                                <td>{{ balance.accrual_rate }}</td>
+                                <td>
+                                    {% if balance.remaining_hours < 0 %}
+                                    <span class="badge bg-danger">Negative Balance</span>
+                                    {% elif balance.remaining_hours == 0 %}
+                                    <span class="badge bg-warning">Depleted</span>
+                                    {% elif balance.remaining_hours / balance.total_hours < 0.25 %}
+                                    <span class="badge bg-warning">Low</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary editBalanceBtn"
+                                        data-employee-id="{{ employee.id }}"
+                                        data-employee-name="{{ employee.first_name ~ ' ' ~ employee.last_name }}"
+                                        data-leave-type-id="{{ leave_type.id }}"
+                                        data-leave-type-name="{{ leave_type.name }}"
+                                        data-year="{{ balance.year }}"
+                                        data-total-hours="{{ balance.total_hours }}"
+                                        data-used-hours="{{ balance.used_hours }}"
+                                        data-accrual-rate="{{ balance.accrual_rate }}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No leave balances found for the selected filters.
+                </div>
+                <p>
+                    Use the form above to create leave balances for employees. Each employee should have a balance
+                    for each leave type they are eligible for.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#balanceTable').DataTable({
+            order: [[0, 'asc']],
+            pageLength: 25
+        });
+        
+        // Handle edit button clicks
+        $('.editBalanceBtn').click(function() {
+            // Get data from button
+            var employeeId = $(this).data('employee-id');
+            var leaveTypeId = $(this).data('leave-type-id');
+            var year = $(this).data('year');
+            var totalHours = $(this).data('total-hours');
+            var usedHours = $(this).data('used-hours');
+            var accrualRate = $(this).data('accrual-rate');
+            
+            // Set form values
+            $('#balance_employee_id').val(employeeId);
+            $('#balance_leave_type_id').val(leaveTypeId);
+            $('#balance_year').val(year);
+            $('#total_hours').val(totalHours);
+            $('#used_hours').val(usedHours);
+            $('#accrual_rate').val(accrualRate);
+            
+            // Scroll to form
+            $('html, body').animate({
+                scrollTop: $('#balance_employee_id').closest('.card').offset().top
+            }, 500);
+        });
+    });
+</script>
+{% endblock %}

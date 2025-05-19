@@ -1,0 +1,382 @@
+{% extends "layout.html" %}
+
+{% block title %}My Compensation{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">My Compensation</h1>
+        <div>
+            <a href="{{ url_for('payroll.my_payslips') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-file-invoice-dollar me-1"></i> View Payslips
+            </a>
+            <a href="{{ url_for('payroll.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Payroll Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Compensation Summary Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Compensation Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <!-- Annual Compensation -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold text-primary">Annual Compensation</h5>
+                                    <hr>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Base Salary</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(employee.base_salary if employee.salary_type == 'Annual' else employee.base_salary * 2080) }}</span>
+                                    </div>
+                                    
+                                    {% set total_bonuses = 0 %}
+                                    {% for comp in components if comp.component_type.category == 'Bonus' %}
+                                        {% set total_bonuses = total_bonuses + comp.amount %}
+                                    {% endfor %}
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Bonuses & Incentives</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(total_bonuses) }}</span>
+                                    </div>
+                                    
+                                    {% set total_allowances = 0 %}
+                                    {% for comp in components if comp.component_type.category == 'Allowance' %}
+                                        {% set total_allowances = total_allowances + comp.amount %}
+                                    {% endfor %}
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Allowances</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(total_allowances) }}</span>
+                                    </div>
+                                    
+                                    {% set total_benefits = 0 %}
+                                    {% for benefit, emp_benefit in benefits %}
+                                        {% if benefit.benefit_type == 'Health' or benefit.benefit_type == 'Retirement' %}
+                                            {% set total_benefits = total_benefits + benefit.company_contribution %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Benefits Cost</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(total_benefits) }}</span>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    {% set total_compensation = employee.base_salary if employee.salary_type == 'Annual' else employee.base_salary * 2080 %}
+                                    {% set total_compensation = total_compensation + total_bonuses + total_allowances + total_benefits %}
+                                    
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">Total Annual Compensation</span>
+                                        <span class="fw-bold text-success">${{ "{:,.2f}".format(total_compensation) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bi-Weekly Pay -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold text-primary">Bi-Weekly Pay</h5>
+                                    <hr>
+                                    
+                                    {% set biweekly_base = employee.base_salary / 26 if employee.salary_type == 'Annual' else employee.base_salary * 80 %}
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Base Pay</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(biweekly_base) }}</span>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Average Bonuses</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(total_bonuses / 26) }}</span>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Allowances</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(total_allowances / 26) }}</span>
+                                    </div>
+                                    
+                                    {% set biweekly_tax = (biweekly_base + total_bonuses / 26 + total_allowances / 26) * 0.2 %}
+                                    
+                                    <div class="d-flex justify-content-between mb-2 text-danger">
+                                        <span>Est. Tax Withholding</span>
+                                        <span class="fw-bold">-${{ "{:,.2f}".format(biweekly_tax) }}</span>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    {% set biweekly_net = biweekly_base + total_bonuses / 26 + total_allowances / 26 - biweekly_tax %}
+                                    
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">Estimated Net Pay</span>
+                                        <span class="fw-bold text-success">${{ "{:,.2f}".format(biweekly_net) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payroll History Chart -->
+                    <div>
+                        <h5 class="fw-bold mb-3">Payroll History</h5>
+                        <div class="chart-container" style="position: relative; height:300px;">
+                            <canvas id="payrollChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Components Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Compensation Components</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Frequency</th>
+                                    <th>Effective Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Base Salary</td>
+                                    <td><span class="badge bg-primary">Base Pay</span></td>
+                                    <td>${{ "{:,.2f}".format(employee.base_salary) }}</td>
+                                    <td>{{ employee.salary_type }}</td>
+                                    <td>{{ employee.start_date.strftime('%b %d, %Y') }}</td>
+                                </tr>
+                                
+                                {% for component in components %}
+                                <tr>
+                                    <td>{{ component.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if component.component_type.category == 'Bonus' else 'info' if component.component_type.category == 'Allowance' else 'warning' }}">
+                                            {{ component.component_type.name }}
+                                        </span>
+                                    </td>
+                                    <td>${{ "{:,.2f}".format(component.amount) }}</td>
+                                    <td>{{ component.frequency }}</td>
+                                    <td>{{ component.effective_date.strftime('%b %d, %Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Employee Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Employee Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if employee.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profile_images/' + employee.profile_image) }}" alt="{{ employee.full_name }}" class="rounded-circle" width="100" height="100">
+                        {% else %}
+                            <div class="avatar-initials mx-auto" style="width: 100px; height: 100px; line-height: 100px; font-size: 2.5rem;">{{ employee.initials }}</div>
+                        {% endif %}
+                        <h5 class="mt-3 mb-0">{{ employee.full_name }}</h5>
+                        <p class="text-muted">{{ employee.job_title }}</p>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Employee ID</span>
+                            <span class="fw-bold">{{ employee.employee_id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Department</span>
+                            <span class="fw-bold">{{ employee.department.name if employee.department else 'N/A' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Job Grade</span>
+                            <span class="fw-bold">{{ employee.job_grade or 'N/A' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Start Date</span>
+                            <span class="fw-bold">{{ employee.start_date.strftime('%b %d, %Y') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            <span>Years of Service</span>
+                            {% set days_of_service = (employee.start_date.now() - employee.start_date).days %}
+                            {% set years_of_service = (days_of_service / 365)|int %}
+                            <span class="fw-bold">{{ years_of_service }} years</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Benefits Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Benefits</h6>
+                </div>
+                <div class="card-body">
+                    {% if benefits %}
+                    <ul class="list-group list-group-flush">
+                        {% for benefit, emp_benefit in benefits %}
+                        <li class="list-group-item bg-transparent">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">{{ benefit.name }}</span>
+                                <span class="badge bg-{{ 'info' if benefit.benefit_type == 'Health' else 'success' if benefit.benefit_type == 'Retirement' else 'secondary' }}">
+                                    {{ benefit.benefit_type }}
+                                </span>
+                            </div>
+                            <div class="small text-muted mb-2">{{ benefit.description }}</div>
+                            
+                            <div class="d-flex justify-content-between small">
+                                <span>Employee Contribution:</span>
+                                <span>${{ "{:,.2f}".format(benefit.employee_contribution) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span>Company Contribution:</span>
+                                <span>${{ "{:,.2f}".format(benefit.company_contribution) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span>Start Date:</span>
+                                <span>{{ emp_benefit.start_date.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No benefits information available.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Leave Balances Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Leave Balances</h6>
+                </div>
+                <div class="card-body">
+                    {% set leave_balances = employee.leave_balances %}
+                    
+                    {% if leave_balances %}
+                    <ul class="list-group list-group-flush">
+                        {% for balance in leave_balances %}
+                        <li class="list-group-item bg-transparent">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ balance.leave_type.name }}</span>
+                                <span class="fw-bold">{{ balance.balance }} hours</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                {% set max_balance = balance.leave_type.max_balance or 200 %}
+                                {% set percentage = (balance.balance / max_balance * 100)|int %}
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No leave balance information available.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('payrollChart').getContext('2d');
+    
+    // Prepare data for chart
+    const payslips = [
+        {% for payslip in payroll_history %}
+        {
+            period: "{{ payslip.payroll_period.start_date.strftime('%b %d') }} - {{ payslip.payroll_period.end_date.strftime('%b %d') }}",
+            gross: {{ payslip.gross_pay }},
+            net: {{ payslip.net_pay }},
+            tax: {{ payslip.tax_amount }}
+        },
+        {% endfor %}
+    ];
+    
+    // Extract last 10 payslips
+    const recentPayslips = payslips.slice(0, 10).reverse();
+    
+    const payrollChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: recentPayslips.map(p => p.period),
+            datasets: [
+                {
+                    label: 'Gross Pay',
+                    data: recentPayslips.map(p => p.gross),
+                    backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Net Pay',
+                    data: recentPayslips.map(p => p.net),
+                    backgroundColor: 'rgba(28, 200, 138, 0.7)',
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Tax Withholding',
+                    data: recentPayslips.map(p => p.tax),
+                    backgroundColor: 'rgba(231, 74, 59, 0.7)',
+                    borderColor: 'rgba(231, 74, 59, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.raw.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,353 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ employee.full_name }} - Employee Profile{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .profile-header {
+        background-color: rgba(78, 115, 223, 0.1);
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-detail-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .profile-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid rgba(255, 255, 255, 0.2);
+        background-color: #4e73df;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h1 class="h3 mb-0 text-light">Employee Profile</h1>
+            {% if nav_data %}
+            <span class="ms-3 text-muted">
+                {{ nav_data.current_position }} of {{ nav_data.total_count }}
+            </span>
+            {% endif %}
+        </div>
+        <div>
+            {% if nav_data %}
+            <div class="btn-group me-2">
+                {% if nav_data.prev_id %}
+                <a href="{{ url_for('employees.view_profile', id=nav_data.prev_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                {% endif %}
+                
+                {% if nav_data.next_id %}
+                <a href="{{ url_for('employees.view_profile', id=nav_data.next_id) }}" class="btn btn-outline-secondary">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if current_user.role.name in ['Admin', 'HR'] %}
+            <a href="{{ url_for('employees.edit_employee', id=employee.id) }}" class="btn btn-primary me-2">
+                <i class="fas fa-user-edit"></i> Edit Profile
+            </a>
+            {% endif %}
+            <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="row profile-header py-4">
+        <div class="col-md-3 text-center">
+            <div class="profile-image mx-auto mb-3">
+                {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+            </div>
+            <h4 class="mb-1">{{ employee.full_name }}</h4>
+            <p class="text-muted">{{ employee.job_title }}</p>
+            
+            {% if not employee.user_id and current_user.role.name in ['Admin', 'HR'] %}
+            <form action="{{ url_for('employees.create_account', employee_id=employee.id) }}" method="POST">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fas fa-user-plus"></i> Create User Account
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h5 class="text-muted">Employee ID</h5>
+                        <p class="lead">{{ employee.employee_id }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h5 class="text-muted">Department</h5>
+                        <p class="lead">{{ employee.department.name if employee.department else 'Not Assigned' }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h5 class="text-muted">Status</h5>
+                        <p>
+                            <span class="badge {% if employee.status == 'Active' %}bg-success{% elif employee.status == 'Inactive' %}bg-secondary{% else %}bg-warning{% endif %} px-3 py-2">
+                                {{ employee.status }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h5 class="text-muted">Hire Date</h5>
+                        <p class="lead">{{ employee.hire_date.strftime('%B %d, %Y') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="row">
+        <!-- Contact Information -->
+        <div class="col-lg-4">
+            <div class="card shadow profile-detail-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Contact Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-envelope mr-2"></i> Email</h6>
+                        <p>{{ employee.email }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="fas fa-phone mr-2"></i> Phone</h6>
+                        <p>{{ employee.phone or 'Not provided' }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="fas fa-map-marker-alt mr-2"></i> Address</h6>
+                        <p>{{ employee.address or 'Not provided' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment Details -->
+        <div class="col-lg-4">
+            <div class="card shadow profile-detail-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Employment Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-user-tie mr-2"></i> Reports To</h6>
+                        <p>
+                            {% if employee.manager %}
+                            <a href="{{ url_for('employees.view_profile', id=employee.manager.id) }}">
+                                {{ employee.manager.full_name }} ({{ employee.manager.job_title }})
+                            </a>
+                            {% else %}
+                            None
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Employee Level -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-level-up-alt mr-2"></i> Employee Level</h6>
+                        <p>{{ employee.level if employee.level else 'Not specified' }}</p>
+                    </div>
+                    
+                    <!-- Is Manager -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-user-cog mr-2"></i> Management Role</h6>
+                        <p>
+                            {% if employee.is_manager %}
+                            <span class="badge bg-info px-2 py-1">Manager</span>
+                            {% else %}
+                            <span class="text-muted">Not a manager</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- Education Level -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-graduation-cap mr-2"></i> Education</h6>
+                        <p>{{ employee.education_level if employee.education_level else 'Not specified' }}</p>
+                    </div>
+                    
+                    <!-- Birth Date and Age -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-birthday-cake mr-2"></i> Birth Date</h6>
+                        <p>
+                            {% if employee.birth_date %}
+                            {{ employee.birth_date.strftime('%B %d, %Y') }} 
+                            <span class="text-muted">(Age: {{ employee.age }})</span>
+                            {% else %}
+                            Not specified
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-users mr-2"></i> Direct Reports</h6>
+                        {% if employee.subordinates.count() > 0 %}
+                        <ul class="list-group list-group-flush">
+                            {% for subordinate in employee.subordinates %}
+                            <li class="list-group-item bg-transparent">
+                                <a href="{{ url_for('employees.view_profile', id=subordinate.id) }}">
+                                    {{ subordinate.full_name }} ({{ subordinate.job_title }})
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>None</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-4">
+            <div class="card shadow profile-detail-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Recent Documents</h6>
+                </div>
+                <div class="card-body">
+                    {% if employee.documents.count() > 0 %}
+                    <ul class="list-group list-group-flush">
+                        {% for document in employee.documents[:5] %}
+                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-info me-2">{{ document.document_type }}</span>
+                                {{ document.title }}
+                            </div>
+                            <small class="text-muted">{{ document.upload_date.strftime('%Y-%m-%d') }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('documents.index') }}?employee_id={{ employee.id }}" class="btn btn-sm btn-outline-primary">View All Documents</a>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted my-3">No documents found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance and Leave Stats -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Recent Attendance</h6>
+                    <a href="{{ url_for('attendance.reports') }}?employee_id={{ employee.id }}" class="btn btn-sm btn-outline-primary">
+                        View Full History
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if employee.attendance_records.count() > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in employee.attendance_records.order_by(Attendance.date.desc()).limit(5).all() %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge {% if record.status == 'Present' %}bg-success{% elif record.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ record.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.clock_in.strftime('%H:%M') if record.clock_in else 'N/A' }}</td>
+                                    <td>{{ record.clock_out.strftime('%H:%M') if record.clock_out else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted my-3">No attendance records found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Leave History</h6>
+                    <a href="{{ url_for('leave.manage') }}?employee_id={{ employee.id }}" class="btn btn-sm btn-outline-primary">
+                        View Full History
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if employee.leave_requests.count() > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in employee.leave_requests.order_by(models.LeaveRequest.start_date.desc()).limit(5).all() %}
+                                <tr>
+                                    <td>{{ leave.leave_type.name }}</td>
+                                    <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge {% if leave.status == 'Approved' %}bg-success{% elif leave.status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ leave.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted my-3">No leave history found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

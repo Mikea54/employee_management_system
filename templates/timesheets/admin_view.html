@@ -1,0 +1,370 @@
+{% extends "layout.html" %}
+
+{% block title %}Timesheet Management - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Timesheet Management</h1>
+        <div>
+            {% if current_user.employee %}
+            <a href="{{ url_for('timesheets.my_timesheet') }}" 
+               class="btn btn-success btn-lg me-2">
+                <i class="fas fa-user-clock me-2"></i> Go to My Timesheet
+            </a>
+            {% endif %}
+            <a href="{{ url_for('timesheets.pay_periods') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-alt"></i> Manage Pay Periods
+            </a>
+        </div>
+    </div>
+    
+    <!-- Instructions Alert -->
+    <div class="alert alert-info mb-4">
+        <h5><i class="fas fa-info-circle me-2"></i> Administrator View</h5>
+        <p>This is the administrator view of all timesheets. You can:</p>
+        <ul>
+            <li>View all pay periods and manage them</li>
+            <li>See submission and approval statistics</li>
+            <li>Access any employee's timesheet by clicking "View"</li>
+        </ul>
+        <p>
+            <strong>To access and edit your own timesheet:</strong>
+        </p>
+        <ol>
+            <li>Click on the green "My Timesheet Instructions" button above</li>
+            <li>Follow the detailed instructions to fill out and submit your timesheet</li>
+            <li>Or click the "Help" button in the top navigation bar at any time</li>
+        </ol>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Current Pay Period</div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {% if pay_periods and pay_periods[0].is_current %}
+                                    {{ pay_periods[0].start_date.strftime('%b %d') }} - {{ pay_periods[0].end_date.strftime('%b %d, %Y') }}
+                                {% else %}
+                                    None Active
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Submitted Timesheets</div>
+                            <div class="h5 mb-0 font-weight-bold" id="submitted-count">--</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Approved Timesheets</div>
+                            <div class="h5 mb-0 font-weight-bold" id="approved-count">--</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Approval</div>
+                            <div class="h5 mb-0 font-weight-bold" id="pending-count">--</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Pay Periods -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">Recent Pay Periods</h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="#" id="export-csv">CSV</a></li>
+                    <li><a class="dropdown-item" href="#" id="export-pdf">PDF</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="payPeriodsTable">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th>Approved</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for period in pay_periods %}
+                        <tr>
+                            <td>{{ period.id }}</td>
+                            <td>{{ period.start_date.strftime('%m/%d/%Y') }}</td>
+                            <td>{{ period.end_date.strftime('%m/%d/%Y') }}</td>
+                            <td>
+                                <span class="badge 
+                                {% if period.status == 'Open' %}bg-success{% 
+                                elif period.status == 'Closed' %}bg-danger{% 
+                                else %}bg-warning{% endif %}">
+                                    {{ period.status }}
+                                </span>
+                            </td>
+                            <td class="submitted-count-{{ period.id }}">--</td>
+                            <td class="approved-count-{{ period.id }}">--</td>
+                            <td>
+                                <a href="{{ url_for('timesheets.period_timesheets', period_id=period.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-search"></i> View
+                                </a>
+                                {% if period.status == 'Open' %}
+                                <form method="post" action="{{ url_for('timesheets.close_pay_period', period_id=period.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to close this pay period? This will prevent further timesheet submissions.')">
+                                        <i class="fas fa-lock"></i> Close
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if recent_period and recent_timesheets %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">Recent Timesheets ({{ recent_period.start_date.strftime('%m/%d/%Y') }} - {{ recent_period.end_date.strftime('%m/%d/%Y') }})</h6>
+            <div class="d-flex">
+                <div class="me-3">
+                    <select id="employee-filter" class="form-select form-select-sm">
+                        <option value="">All Employees</option>
+                        {% for employee in employees %}
+                        <option value="{{ employee.id }}">{{ employee.full_name() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownTimesheet"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownTimesheet">
+                        <li><a class="dropdown-item" href="#" id="export-timesheet-csv">CSV</a></li>
+                        <li><a class="dropdown-item" href="#" id="export-timesheet-pdf">PDF</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="timesheetsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Total Hours</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for timesheet in recent_timesheets %}
+                        <tr data-employee-id="{{ timesheet.employee_id }}">
+                            <td>{{ timesheet.id }}</td>
+                            <td>{{ timesheet.employee.full_name() }}</td>
+                            <td>{{ timesheet.employee.department.name if timesheet.employee.department else 'N/A' }}</td>
+                            <td>
+                                <span class="badge 
+                                {% if timesheet.status == 'Draft' %}bg-secondary{% 
+                                elif timesheet.status == 'Submitted' %}bg-primary{% 
+                                elif timesheet.status == 'Approved' %}bg-success{% 
+                                elif timesheet.status == 'Rejected' %}bg-danger{% 
+                                else %}bg-warning{% endif %}">
+                                    {{ timesheet.status }}
+                                </span>
+                            </td>
+                            <td>{{ timesheet.total_hours }}</td>
+                            <td>{{ timesheet.submitted_at.strftime('%m/%d/%Y %H:%M') if timesheet.submitted_at else 'Not submitted' }}</td>
+                            <td>
+                                <a href="{{ url_for('timesheets.view_timesheet', timesheet_id=timesheet.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize employee filter functionality
+    const employeeFilter = document.getElementById('employee-filter');
+    if (employeeFilter) {
+        employeeFilter.addEventListener('change', function() {
+            const selectedEmployeeId = this.value;
+            const rows = document.querySelectorAll('#timesheetsTable tbody tr');
+            
+            rows.forEach(row => {
+                // Skip the "No timesheets found" row if it exists
+                if (row.cells.length === 1) return;
+                
+                const employeeIdCell = row.getAttribute('data-employee-id');
+                
+                if (!selectedEmployeeId || employeeIdCell === selectedEmployeeId) {
+                    row.style.display = '';  // Show the row
+                } else {
+                    row.style.display = 'none';  // Hide the row
+                }
+            });
+        });
+    }
+    
+    // Fetch timesheet statistics
+    function fetchTimesheetCounts() {
+        // In a real implementation, this would be an API call
+        // Count the visible timesheet rows
+        const rows = document.querySelectorAll('#timesheetsTable tbody tr:not([style*="display: none"])');
+        const totalCount = rows.length;
+        
+        let submittedCount = 0;
+        let approvedCount = 0;
+        let pendingCount = 0;
+        
+        rows.forEach(row => {
+            // Skip the "No timesheets found" row if it exists
+            if (row.cells.length === 1) return;
+            
+            const status = row.querySelector('.badge').textContent.trim();
+            if (status === 'Submitted') submittedCount++;
+            else if (status === 'Approved') approvedCount++;
+            else if (status === 'Draft') pendingCount++;
+        });
+        
+        // Update the counts on the UI
+        document.getElementById('submitted-count').textContent = submittedCount;
+        document.getElementById('approved-count').textContent = approvedCount;
+        document.getElementById('pending-count').textContent = pendingCount;
+        
+        // Also update per-period counts
+        {% for period in pay_periods %}
+        document.querySelector('.submitted-count-{{ period.id }}').textContent = submittedCount;
+        document.querySelector('.approved-count-{{ period.id }}').textContent = approvedCount;
+        {% endfor %}
+    }
+    
+    // Export functions
+    document.getElementById('export-csv').addEventListener('click', function(e) {
+        e.preventDefault();
+        exportTableToCSV('payPeriodsTable', 'pay_periods.csv');
+    });
+    
+    document.getElementById('export-pdf').addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('PDF export functionality will be implemented.');
+    });
+    
+    // Timesheet exports
+    document.getElementById('export-timesheet-csv')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        exportTableToCSV('timesheetsTable', 'timesheets.csv');
+    });
+    
+    document.getElementById('export-timesheet-pdf')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('PDF export functionality will be implemented.');
+    });
+    
+    // Helper function to export table as CSV
+    function exportTableToCSV(tableId, filename) {
+        const table = document.getElementById(tableId);
+        const rows = table.querySelectorAll('tr');
+        const csv = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Get text content and remove actions column
+                if (j !== 6) {
+                    let text = cols[j].innerText.replace(/"/g, '""');
+                    row.push('"' + text + '"');
+                }
+            }
+            csv.push(row.join(','));
+        }
+        
+        // Download CSV file
+        const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+        const downloadLink = document.createElement('a');
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+    
+    // Initialize page
+    fetchTimesheetCounts();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "layout.html" %}
+
+{% block title %}{% if is_new %}Add New Employee{% else %}Edit Employee{% endif %} - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h1 class="h3 mb-0 text-light">{% if is_new %}Add New Employee{% else %}Edit Employee{% endif %}</h1>
+            {% if not is_new and nav_data %}
+            <span class="ms-3 text-muted">
+                {{ nav_data.current_position }} of {{ nav_data.total_count }}
+            </span>
+            {% endif %}
+        </div>
+        <div>
+            {% if not is_new and nav_data %}
+            <div class="btn-group me-2">
+                {% if nav_data.prev_id %}
+                <a href="{{ url_for('employees.edit_employee', id=nav_data.prev_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                {% endif %}
+                
+                {% if nav_data.next_id %}
+                <a href="{{ url_for('employees.edit_employee', id=nav_data.next_id) }}" class="btn btn-outline-secondary">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if not is_new %}
+            <a href="{{ url_for('employees.view_profile', id=employee.id) }}" class="btn btn-primary me-2">
+                <i class="fas fa-eye"></i> View Profile
+            </a>
+            {% endif %}
+            <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Form Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Employee Information</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% if is_new %}{{ url_for('employees.create_employee') }}{% else %}{{ url_for('employees.edit_employee', id=employee.id) }}{% endif %}" class="needs-validation" novalidate>
+                <!-- Personal Information Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Personal Information</h5>
+                    </div>
+                    
+                    <!-- Employee ID -->
+                    <div class="col-md-4 mb-3">
+                        <label for="employee_id" class="form-label form-required">Employee ID</label>
+                        <input type="text" class="form-control" id="employee_id" name="employee_id" 
+                               value="{{ employee.employee_id if employee else '' }}" 
+                               {% if not is_new %}readonly{% endif %} required>
+                        <div class="invalid-feedback">Employee ID is required.</div>
+                    </div>
+                    
+                    <!-- First Name -->
+                    <div class="col-md-4 mb-3">
+                        <label for="first_name" class="form-label form-required">First Name</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" 
+                               value="{{ employee.first_name if employee else '' }}" required>
+                        <div class="invalid-feedback">First name is required.</div>
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div class="col-md-4 mb-3">
+                        <label for="last_name" class="form-label form-required">Last Name</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" 
+                               value="{{ employee.last_name if employee else '' }}" required>
+                        <div class="invalid-feedback">Last name is required.</div>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label form-required">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ employee.email if employee else '' }}" required>
+                        <div class="invalid-feedback">Valid email is required.</div>
+                    </div>
+                    
+                    <!-- Phone -->
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               value="{{ employee.phone if employee else '' }}">
+                    </div>
+                    
+                    <!-- Address -->
+                    <div class="col-md-12 mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="2">{{ employee.address if employee else '' }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- Employment Information Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Employment Information</h5>
+                    </div>
+                    
+                    <!-- Department -->
+                    <div class="col-md-4 mb-3">
+                        <label for="department_id" class="form-label form-required">Department</label>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="create_new_department" name="create_new_department">
+                                <label class="form-check-label" for="create_new_department">Create New Department</label>
+                            </div>
+                        </div>
+                        <div id="existing_department_section">
+                            <select class="form-select" id="department_id" name="department_id" required>
+                                <option value="" disabled selected>Select Department</option>
+                                {% for department in departments %}
+                                <option value="{{ department.id }}" {% if employee and employee.department_id == department.id %}selected{% endif %}>
+                                    {{ department.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Please select a department.</div>
+                        </div>
+                        <div id="new_department_section" style="display: none;">
+                            <input type="text" class="form-control" id="new_department_name" name="new_department_name" 
+                                placeholder="Enter new department name">
+                            <textarea class="form-control mt-2" id="new_department_description" name="new_department_description" 
+                                placeholder="Department description (optional)" rows="2"></textarea>
+                            <div class="invalid-feedback">Please enter a department name.</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Job Title -->
+                    <div class="col-md-4 mb-3">
+                        <label for="job_title" class="form-label form-required">Job Title</label>
+                        <input type="text" class="form-control" id="job_title" name="job_title" 
+                               value="{{ employee.job_title if employee else '' }}" required>
+                        <div class="invalid-feedback">Job title is required.</div>
+                    </div>
+                    
+                    <!-- Manager -->
+                    <div class="col-md-4 mb-3">
+                        <label for="manager_id" class="form-label">Manager</label>
+                        <select class="form-select" id="manager_id" name="manager_id">
+                            <option value="">No Manager (Top Level)</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.id }}" {% if employee and employee.manager_id == manager.id %}selected{% endif %}>
+                                {{ manager.full_name }} - {{ manager.job_title }}{% if manager.department %} ({{ manager.department.name }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Hire Date -->
+                    <div class="col-md-4 mb-3">
+                        <label for="hire_date" class="form-label form-required">Hire Date</label>
+                        <input type="date" class="form-control" id="hire_date" name="hire_date" 
+                               value="{{ employee.hire_date.strftime('%Y-%m-%d') if employee else '' }}" required>
+                        <div class="invalid-feedback">Hire date is required.</div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="col-md-4 mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="Active" {% if employee and employee.status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if employee and employee.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                            <option value="On Leave" {% if employee and employee.status == 'On Leave' %}selected{% endif %}>On Leave</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Employee Level -->
+                    <div class="col-md-4 mb-3">
+                        <label for="level" class="form-label">Employee Level</label>
+                        <select class="form-select" id="level" name="level">
+                            <option value="" {% if not employee or not employee.level %}selected{% endif %}>Select Level</option>
+                            <option value="Entry" {% if employee and employee.level == 'Entry' %}selected{% endif %}>Entry Level</option>
+                            <option value="Associate" {% if employee and employee.level == 'Associate' %}selected{% endif %}>Associate</option>
+                            <option value="Mid-Level" {% if employee and employee.level == 'Mid-Level' %}selected{% endif %}>Mid-Level</option>
+                            <option value="Senior" {% if employee and employee.level == 'Senior' %}selected{% endif %}>Senior</option>
+                            <option value="Lead" {% if employee and employee.level == 'Lead' %}selected{% endif %}>Lead</option>
+                            <option value="Principal" {% if employee and employee.level == 'Principal' %}selected{% endif %}>Principal</option>
+                            <option value="Director" {% if employee and employee.level == 'Director' %}selected{% endif %}>Director</option>
+                            <option value="Executive" {% if employee and employee.level == 'Executive' %}selected{% endif %}>Executive</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Is Manager Checkbox -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label d-block">Management Role</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_manager" name="is_manager" value="1"
+                                {% if employee and employee.is_manager %}checked{% endif %}>
+                            <label class="form-check-label" for="is_manager">
+                                Designate as Manager
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">Check this if employee has direct reports</small>
+                    </div>
+                </div>
+                
+                <!-- Additional Information Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Additional Information</h5>
+                    </div>
+                    
+                    <!-- Birth Date -->
+                    <div class="col-md-4 mb-3">
+                        <label for="birth_date" class="form-label">Birth Date</label>
+                        <input type="date" class="form-control" id="birth_date" name="birth_date" 
+                               value="{{ employee.birth_date.strftime('%Y-%m-%d') if employee and employee.birth_date else '' }}">
+                        {% if employee and employee.birth_date %}
+                        <small class="form-text text-muted">Age: {{ employee.age }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Education Level -->
+                    <div class="col-md-8 mb-3">
+                        <label for="education_level" class="form-label">Education Level</label>
+                        <select class="form-select" id="education_level" name="education_level">
+                            <option value="" {% if not employee or not employee.education_level %}selected{% endif %}>Select Education Level</option>
+                            <option value="High School" {% if employee and employee.education_level == 'High School' %}selected{% endif %}>High School</option>
+                            <option value="Associate's Degree" {% if employee and employee.education_level == 'Associate\'s Degree' %}selected{% endif %}>Associate's Degree</option>
+                            <option value="Bachelor's Degree" {% if employee and employee.education_level == 'Bachelor\'s Degree' %}selected{% endif %}>Bachelor's Degree</option>
+                            <option value="Master's Degree" {% if employee and employee.education_level == 'Master\'s Degree' %}selected{% endif %}>Master's Degree</option>
+                            <option value="Doctorate" {% if employee and employee.education_level == 'Doctorate' %}selected{% endif %}>Doctorate</option>
+                            <option value="Professional Degree" {% if employee and employee.education_level == 'Professional Degree' %}selected{% endif %}>Professional Degree</option>
+                            <option value="Trade School" {% if employee and employee.education_level == 'Trade School' %}selected{% endif %}>Trade School</option>
+                            <option value="Certification" {% if employee and employee.education_level == 'Certification' %}selected{% endif %}>Certification</option>
+                            <option value="Other" {% if employee and employee.education_level == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end">
+                    <button type="reset" class="btn btn-secondary me-2">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% if is_new %}Create Employee{% else %}Update Employee{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Toggle between existing and new department
+    $('#create_new_department').change(function() {
+        if(this.checked) {
+            $('#existing_department_section').hide();
+            $('#new_department_section').show();
+            $('#department_id').prop('required', false);
+            $('#new_department_name').prop('required', true);
+        } else {
+            $('#existing_department_section').show();
+            $('#new_department_section').hide();
+            $('#department_id').prop('required', true);
+            $('#new_department_name').prop('required', false);
+        }
+    });
+});
+</script>
+{% endblock %}
