@@ -147,9 +147,12 @@
                             </a>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <a href="{{ url_for('budgeting.generate_projection') }}" class="btn btn-info btn-block w-100">
-                                <i class="fas fa-chart-line"></i> Personnel Projection
-                            </a>
+                        <a href="{{ url_for('budgeting.generate_projection') }}" class="btn btn-info btn-block w-100">
+                            <i class="fas fa-chart-line"></i> Personnel Projection
+                        </a>
+                        <a href="{{ url_for('budgeting.company_payroll_expense') }}" class="btn btn-warning btn-block w-100 mt-2">
+                            <i class="fas fa-calculator"></i> Payroll Expense
+                        </a>
                         </div>
                         <div class="col-md-6 mb-3">
                             <a href="{{ url_for('budgeting.budget_comparison') }}" class="btn btn-secondary btn-block w-100">

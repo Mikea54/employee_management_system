@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Company Payroll Expense{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Company Payroll Expense</h1>
+        <a href="{{ url_for('budgeting.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Expense Summary</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-4" action="{{ url_for('budgeting.company_payroll_expense') }}">
+                <div class="col-md-4">
+                    <label for="department_id" class="form-label">Department</label>
+                    <select name="department_id" id="department_id" class="form-select">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept.id == department_id %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                </div>
+            </form>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-left-primary h-100 py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-uppercase mb-1">Total Salaries</div>
+                            <div class="h5 mb-0 fw-bold text-primary">${{ "{:,.2f}".format(total_salary) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-left-success h-100 py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-uppercase mb-1">Total Benefits</div>
+                            <div class="h5 mb-0 fw-bold text-success">${{ "{:,.2f}".format(total_benefits) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-left-info h-100 py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-uppercase mb-1">Total Payroll Expense</div>
+                            <div class="h5 mb-0 fw-bold text-info">${{ "{:,.2f}".format(total_expense) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
