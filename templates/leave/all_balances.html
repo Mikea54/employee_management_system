@@ -117,7 +117,7 @@
                                 {% set total_hours = namespace(value=0) %}
                                 {% for employee_id, types in balances.items() %}
                                     {% for type_id, balance in types.items() %}
-                                        {% set total_hours.value = total_hours.value + balance.remaining_hours() %}
+                                        {% set total_hours.value = total_hours.value + balance.remaining_hours %}
                                     {% endfor %}
                                 {% endfor %}
                                 {{ total_hours.value }}
@@ -169,7 +169,7 @@
                             {% for leave_type in leave_types %}
                                 {% if employee.id in balances and leave_type.id in balances[employee.id] %}
                                     {% set balance = balances[employee.id][leave_type.id] %}
-                                    {% set remaining = balance.remaining_hours() %}
+                                    {% set remaining = balance.remaining_hours %}
                                     
                                     {% if remaining <= 8 %}
                                         <td class="balance-cell-critical">
@@ -195,7 +195,7 @@
                                 {% set employee_total = namespace(value=0) %}
                                 {% if employee.id in balances %}
                                     {% for type_id, balance in balances[employee.id].items() %}
-                                        {% set employee_total.value = employee_total.value + balance.remaining_hours() %}
+                                        {% set employee_total.value = employee_total.value + balance.remaining_hours %}
                                     {% endfor %}
                                 {% endif %}
                                 {{ employee_total.value }}
@@ -228,7 +228,7 @@
                     {% set type_total = namespace(hours=0, employees=0) %}
                     {% for employee_id, types in balances.items() %}
                         {% if leave_type.id in types %}
-                            {% set type_total.hours = type_total.hours + types[leave_type.id].remaining_hours() %}
+                            {% set type_total.hours = type_total.hours + types[leave_type.id].remaining_hours %}
                             {% set type_total.employees = type_total.employees + 1 %}
                         {% endif %}
                     {% endfor %}
