@@ -162,6 +162,48 @@ class Employee(db.Model):
             age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
             return age
         return None
+
+    @property
+    def current_compensation(self):
+        """Return the employee's active compensation record."""
+        from sqlalchemy import or_
+        return EmployeeCompensation.query.filter(
+            EmployeeCompensation.employee_id == self.id,
+            or_(
+                EmployeeCompensation.end_date.is_(None),
+                EmployeeCompensation.end_date >= datetime.now().date(),
+            ),
+        ).order_by(EmployeeCompensation.effective_date.desc()).first()
+
+    @property
+    def base_salary(self) -> float:
+        """Convenience access to the employee's current base salary."""
+        compensation = self.current_compensation
+        return compensation.base_salary if compensation else 0.0
+
+    @property
+    def salary_type(self) -> str:
+        """Return 'Annual' or 'Hourly' based on current compensation."""
+        compensation = self.current_compensation
+        return getattr(compensation, 'salary_type', 'Annual') if compensation else ''
+
+    @property
+    def years_of_service(self) -> int:
+        """Number of full years since hire date."""
+        if not self.hire_date:
+            return 0
+        today = datetime.now().date()
+        years = today.year - self.hire_date.year
+        if (today.month, today.day) < (self.hire_date.month, self.hire_date.day):
+            years -= 1
+        return years
+
+    @property
+    def initials(self) -> str:
+        """Initials used in avatar placeholders."""
+        first = self.first_name[0] if self.first_name else ''
+        last = self.last_name[0] if self.last_name else ''
+        return f"{first}{last}".upper()
     
     def __repr__(self):
         return f'<Employee {self.employee_id}: {self.full_name}>'
@@ -443,6 +485,7 @@ class EmployeeCompensation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     base_salary = db.Column(db.Float, nullable=False)
+    salary_type = db.Column(db.String(20), default='Annual')  # 'Annual' or 'Hourly'
     effective_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date)  # NULL means currently active
     salary_structure_id = db.Column(db.Integer, db.ForeignKey('salary_structures.id'))
