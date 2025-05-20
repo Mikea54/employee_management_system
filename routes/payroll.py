@@ -8,7 +8,7 @@ from sqlalchemy import func, desc, and_, case, or_, extract
 from sqlalchemy.orm import aliased
 
 from app import db
-from models import (Employee, Department, PayrollPeriod, Payroll, PayrollEntry, SalaryComponent, 
+from models import (Employee, Department, PayPeriod, Payroll, PayrollEntry, SalaryComponent,
                    ComponentType, EmployeeCompensation, CompensationReport, SalaryStructure,
                    EmployeeBenefit, User, LeaveBalance, LeaveType, Benefit)
 from utils.roles import role_required
@@ -24,24 +24,24 @@ def index():
     employee = get_current_employee()
     
     # Get the current payroll period
-    current_period = PayrollPeriod.query.filter(
-        PayrollPeriod.start_date <= datetime.now(),
-        PayrollPeriod.end_date >= datetime.now()
+    current_period = PayPeriod.query.filter(
+        PayPeriod.start_date <= datetime.now(),
+        PayPeriod.end_date >= datetime.now()
     ).first()
     
     # If no current period, get the most recent draft period
     if not current_period:
-        current_period = PayrollPeriod.query.filter_by(status='Draft').order_by(PayrollPeriod.start_date.asc()).first()
+        current_period = PayPeriod.query.filter_by(status='Draft').order_by(PayPeriod.start_date.asc()).first()
     
     # Get upcoming periods
-    upcoming_periods = PayrollPeriod.query.filter(
-        PayrollPeriod.start_date > datetime.now()
-    ).order_by(PayrollPeriod.start_date.asc()).limit(5).all()
+    upcoming_periods = PayPeriod.query.filter(
+        PayPeriod.start_date > datetime.now()
+    ).order_by(PayPeriod.start_date.asc()).limit(5).all()
     
     # Get past periods
-    past_periods = PayrollPeriod.query.filter(
-        PayrollPeriod.end_date < datetime.now()
-    ).order_by(PayrollPeriod.end_date.desc()).limit(5).all()
+    past_periods = PayPeriod.query.filter(
+        PayPeriod.end_date < datetime.now()
+    ).order_by(PayPeriod.end_date.desc()).limit(5).all()
     
     # For employee view - get recent payslips
     recent_payslips = None
@@ -70,8 +70,8 @@ def index():
 @login_required
 @role_required(['Admin', 'HR'])
 def payroll_periods():
-    """View all payroll periods"""
-    periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    """View all pay periods"""
+    periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     
     # Add a property to check if a period is current
     current_date = datetime.now().date()
@@ -103,11 +103,11 @@ def create_period():
             flash('Payment date should be after the end date', 'warning')
         
         # Check for overlap with existing periods
-        overlapping = PayrollPeriod.query.filter(
+        overlapping = PayPeriod.query.filter(
             or_(
-                and_(PayrollPeriod.start_date <= start_date, PayrollPeriod.end_date >= start_date),
-                and_(PayrollPeriod.start_date <= end_date, PayrollPeriod.end_date >= end_date),
-                and_(PayrollPeriod.start_date >= start_date, PayrollPeriod.end_date <= end_date)
+                and_(PayPeriod.start_date <= start_date, PayPeriod.end_date >= start_date),
+                and_(PayPeriod.start_date <= end_date, PayPeriod.end_date >= end_date),
+                and_(PayPeriod.start_date >= start_date, PayPeriod.end_date <= end_date)
             )
         ).first()
         
@@ -116,7 +116,7 @@ def create_period():
             return redirect(url_for('payroll.create_period'))
         
         # Create new period
-        new_period = PayrollPeriod(
+        new_period = PayPeriod(
             start_date=start_date,
             end_date=end_date,
             payment_date=payment_date,
@@ -142,10 +142,10 @@ def create_period():
 @role_required(['Admin', 'HR'])
 def view_period(period_id):
     """View details of a specific payroll period"""
-    period = PayrollPeriod.query.get_or_404(period_id)
+    period = PayPeriod.query.get_or_404(period_id)
     
     # Get all payslips for this period
-    payslips = Payroll.query.filter_by(payroll_period_id=period_id).all()
+    payslips = Payroll.query.filter_by(pay_period_id=period_id).all()
     
     # Calculate totals
     total_gross = sum(payslip.gross_pay for payslip in payslips) if payslips else 0
@@ -186,9 +186,9 @@ def view_period(period_id):
 def run_payroll():
     """Run payroll for the current period"""
     # Get the current period
-    current_period = PayrollPeriod.query.filter(
-        PayrollPeriod.start_date <= datetime.now(),
-        PayrollPeriod.end_date >= datetime.now()
+    current_period = PayPeriod.query.filter(
+        PayPeriod.start_date <= datetime.now(),
+        PayPeriod.end_date >= datetime.now()
     ).first()
     
     if not current_period:
@@ -213,7 +213,7 @@ def payroll_reports():
 @role_required(['Admin', 'HR'])
 def complete_period(period_id):
     """Mark a payroll period as completed"""
-    period = PayrollPeriod.query.get_or_404(period_id)
+    period = PayPeriod.query.get_or_404(period_id)
     
     if period.status != 'Processing':
         flash('Only periods in Processing status can be completed.', 'danger')
@@ -242,7 +242,7 @@ def complete_period(period_id):
 def create_next_period():
     """Create the next bi-weekly period based on the most recent period"""
     # Find the most recent period
-    latest_period = PayrollPeriod.query.order_by(PayrollPeriod.end_date.desc()).first()
+    latest_period = PayPeriod.query.order_by(PayPeriod.end_date.desc()).first()
     
     if not latest_period:
         flash('No existing periods found. Please create a period manually.', 'warning')
@@ -255,7 +255,7 @@ def create_next_period():
     
     try:
         # Create new period
-        new_period = PayrollPeriod(
+        new_period = PayPeriod(
             start_date=new_start_date,
             end_date=new_end_date,
             payment_date=new_payment_date,
@@ -280,8 +280,8 @@ def create_annual_periods():
     current_year = datetime.now().year
     
     # Check if periods already exist for this year
-    existing_count = PayrollPeriod.query.filter(
-        extract('year', PayrollPeriod.start_date) == current_year
+    existing_count = PayPeriod.query.filter(
+        extract('year', PayPeriod.start_date) == current_year
     ).count()
     
     if existing_count > 0:
@@ -304,7 +304,7 @@ def create_annual_periods():
             payment_date = end_date + timedelta(days=5)
             
             # Create period
-            period = PayrollPeriod(
+            period = PayPeriod(
                 start_date=start_date,
                 end_date=end_date,
                 payment_date=payment_date,
@@ -332,7 +332,7 @@ def create_annual_periods():
 @role_required(['Admin', 'HR'])
 def update_period(period_id):
     """Update a payroll period"""
-    period = PayrollPeriod.query.get_or_404(period_id)
+    period = PayPeriod.query.get_or_404(period_id)
     
     # Only draft periods can be updated
     if period.status != 'Draft':
@@ -354,12 +354,12 @@ def update_period(period_id):
             flash('Payment date should be after the end date', 'warning')
         
         # Check for overlap with existing periods (exclude this period)
-        overlapping = PayrollPeriod.query.filter(
-            PayrollPeriod.id != period_id,
+        overlapping = PayPeriod.query.filter(
+            PayPeriod.id != period_id,
             or_(
-                and_(PayrollPeriod.start_date <= start_date, PayrollPeriod.end_date >= start_date),
-                and_(PayrollPeriod.start_date <= end_date, PayrollPeriod.end_date >= end_date),
-                and_(PayrollPeriod.start_date >= start_date, PayrollPeriod.end_date <= end_date)
+                and_(PayPeriod.start_date <= start_date, PayPeriod.end_date >= start_date),
+                and_(PayPeriod.start_date <= end_date, PayPeriod.end_date >= end_date),
+                and_(PayPeriod.start_date >= start_date, PayPeriod.end_date <= end_date)
             )
         ).first()
         
@@ -391,7 +391,7 @@ def update_period(period_id):
 @role_required(['Admin', 'HR'])
 def process_period(period_id):
     """Process a payroll period - generate payslips for all employees"""
-    period = PayrollPeriod.query.get_or_404(period_id)
+    period = PayPeriod.query.get_or_404(period_id)
     
     # Only draft periods can be processed
     if period.status != 'Draft':
@@ -411,7 +411,7 @@ def process_period(period_id):
             # Check if a payslip already exists for this employee in this period
             existing_payslip = Payroll.query.filter_by(
                 employee_id=employee.id,
-                payroll_period_id=period.id
+                pay_period_id=period.id
             ).first()
             
             if existing_payslip:
@@ -420,7 +420,7 @@ def process_period(period_id):
             # Create new payslip
             new_payslip = Payroll(
                 employee_id=employee.id,
-                payroll_period_id=period.id,
+                pay_period_id=period.id,
                 gross_pay=employee.base_salary / 26 if employee.salary_type == 'Annual' else employee.base_salary,  # Biweekly for annual salaries
                 tax_amount=0,  # Will be calculated in the next step
                 net_pay=0,     # Will be calculated in the next step
@@ -517,11 +517,11 @@ def payslips():
     status = request.args.get('status')
     
     # Base query
-    query = Payroll.query.join(Employee).join(PayrollPeriod)
+    query = Payroll.query.join(Employee).join(PayPeriod)
     
     # Apply filters
     if period_id:
-        query = query.filter(Payroll.payroll_period_id == period_id)
+        query = query.filter(Payroll.pay_period_id == period_id)
     
     if department_id:
         query = query.filter(Employee.department_id == department_id)
@@ -530,12 +530,12 @@ def payslips():
         query = query.filter(Payroll.status == status)
     
     # Order by most recent periods first, then by employee name
-    query = query.order_by(PayrollPeriod.start_date.desc(), Employee.first_name, Employee.last_name)
+    query = query.order_by(PayPeriod.start_date.desc(), Employee.first_name, Employee.last_name)
     
     payslips = query.all()
     
     # Get all periods and departments for filters
-    periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     departments = Department.query.order_by(Department.name).all()
     
     return render_template('payroll/payslips.html', 

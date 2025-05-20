@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const payslips = [
         {% for payslip in payroll_history %}
         {
-            period: "{{ payslip.payroll_period.start_date.strftime('%b %d') }} - {{ payslip.payroll_period.end_date.strftime('%b %d') }}",
+            period: "{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d') }}",
             gross: {{ payslip.gross_pay }},
             net: {{ payslip.net_pay }},
             tax: {{ payslip.tax_amount }}
