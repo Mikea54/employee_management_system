@@ -303,10 +303,14 @@ class PayPeriod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), default='Open')  # Open, Closed, Processing
+    payment_date = db.Column(db.Date)  # Optional payroll payment date
+    status = db.Column(db.String(20), default='Open')  # Open, Closed, Processing, Draft, Completed
+    is_thirteenth_month = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     timesheets = db.relationship('Timesheet', backref='pay_period', lazy='dynamic')
+    payrolls = db.relationship('Payroll', backref='pay_period', lazy='dynamic')
     
     @property
     def is_current(self):
@@ -430,31 +434,6 @@ class EmployeeCompensation(db.Model):
     def __repr__(self):
         return f'<EmployeeCompensation {self.employee.full_name}: ${self.base_salary}>'
 
-# Payroll Period model
-class PayrollPeriod(db.Model):
-    __tablename__ = 'payroll_periods'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    payment_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), default='Draft')  # Draft, Processing, Completed
-    is_thirteenth_month = db.Column(db.Boolean, default=False)  # For 13th month/year-end bonus
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships with Payroll model instead
-    payrolls = db.relationship('Payroll', lazy='dynamic')
-    
-    @property
-    def total_gross(self):
-        """Calculate total gross pay for this period"""
-        result = db.session.query(db.func.sum(Payroll.gross_pay)).\
-            filter(Payroll.payroll_period_id == self.id).scalar()
-        return result or 0.0
-    
-    def __repr__(self):
-        return f'<PayrollPeriod {self.start_date} to {self.end_date}>'
 
 # Payroll model (payslip)
 class Payroll(db.Model):
@@ -462,7 +441,7 @@ class Payroll(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
-    payroll_period_id = db.Column(db.Integer, db.ForeignKey('payroll_periods.id'), nullable=False)
+    pay_period_id = db.Column(db.Integer, db.ForeignKey('pay_periods.id'), nullable=False)
     gross_pay = db.Column(db.Float, nullable=False)
     tax_amount = db.Column(db.Float, default=0.0, nullable=False)
     total_deductions = db.Column(db.Float, default=0.0, nullable=False)
@@ -476,11 +455,10 @@ class Payroll(db.Model):
     
     # Relationships
     employee = db.relationship('Employee', backref='payrolls')
-    payroll_period = db.relationship('PayrollPeriod')
     entries = db.relationship('PayrollEntry', backref='payroll', lazy='dynamic')
     
     def __repr__(self):
-        return f'<Payroll {self.employee.full_name}: {self.payroll_period.start_date} to {self.payroll_period.end_date}>'
+        return f'<Payroll {self.employee.full_name}: {self.pay_period.start_date} to {self.pay_period.end_date}>'
 
 # Payroll Entry model (payslip details)
 class PayrollEntry(db.Model):

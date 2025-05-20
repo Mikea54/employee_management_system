@@ -1,8 +1,10 @@
+import secrets
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
-from models import User, Role, Permission, Department, Employee, PayPeriod, PayrollPeriod
+from models import User, Role, Permission, Department, Employee, PayPeriod
 from utils.helpers import role_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -93,15 +95,19 @@ def edit_user(user_id):
 @login_required
 @role_required('Admin')
 def reset_password(user_id):
-    """Reset user password to default."""
+    """Reset user password to a secure random value."""
     user = User.query.get_or_404(user_id)
-    
-    # Set default password (can be more sophisticated)
-    default_password = 'password123'
-    user.set_password(default_password)
-    
+
+    # Generate a secure random password and set it
+    new_password = secrets.token_urlsafe(8)
+    user.set_password(new_password)
+
     db.session.commit()
-    flash(f'Password reset successfully for {user.username}.', 'success')
+    flash(
+        f'Password reset successfully for {user.username}. New password: '
+        f'{new_password}',
+        'success'
+    )
     return redirect(url_for('admin.user_management'))
 
 @admin_bp.route('/roles/create', methods=['POST'])
@@ -406,11 +412,9 @@ def bulk_update_template():
 @login_required
 @role_required('Admin', 'HR')
 def manage_pay_periods():
-    """Unified management view for timesheet and payroll pay periods"""
-    timesheet_periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
-    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    """View all pay periods"""
+    pay_periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     return render_template(
         'admin/pay_periods.html',
-        timesheet_periods=timesheet_periods,
-        payroll_periods=payroll_periods
+        pay_periods=pay_periods
     )

@@ -1,6 +1,6 @@
 from datetime import date
 from app import app, db
-from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType
+from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType, PayPeriod
 
 def create_document_types():
     """Create standard document types"""
@@ -121,6 +121,11 @@ def create_seed_data():
         
         # Create leave types
         create_leave_types()
+
+        # Create initial pay periods
+        if PayPeriod.query.count() == 0:
+            print("Creating initial pay periods...")
+            create_initial_pay_periods()
         
         # Create admin employee
         admin_employee = Employee(

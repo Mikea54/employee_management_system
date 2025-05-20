@@ -5,7 +5,7 @@ This comprehensive Employee Management System is designed to streamline HR opera
 
 ## System Requirements
 - Python 3.8 or higher
-- PostgreSQL 12 or higher
+ - Microsoft SQL Server 2017 or higher
 - Modern web browser with JavaScript enabled
 
 ## Installation Instructions
@@ -16,29 +16,17 @@ This comprehensive Employee Management System is designed to streamline HR opera
 ```bash
 # For Ubuntu/Debian
 sudo apt update
-sudo apt install -y python3 python3-pip python3-venv postgresql postgresql-contrib
+sudo apt install -y python3 python3-pip python3-venv unixodbc-dev
 
 # For Red Hat/CentOS
-sudo yum install -y python3 python3-pip postgresql postgresql-server postgresql-contrib
-sudo postgresql-setup --initdb
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
+sudo yum install -y python3 python3-pip unixODBC-devel
 ```
 
 ### 2. Database Setup
 
-#### Create a PostgreSQL Database and User
-```bash
-sudo -u postgres psql
-```
-
-Inside the PostgreSQL shell:
-```sql
-CREATE DATABASE employee_management;
-CREATE USER empadmin WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE employee_management TO empadmin;
-\q
-```
+Create a Microsoft SQL Server database and user with privileges for the
+application. Note the server name, port, username and password for the
+connection string.
 
 ### 3. Application Setup
 
@@ -65,32 +53,29 @@ Note: The dependencies.txt file contains all the required Python packages for th
 #### Create a .env File
 Create a file named `.env` in the root directory:
 ```
-DATABASE_URL=postgresql://empadmin:secure_password@localhost/employee_management
+DATABASE_URL=mssql+pyodbc://sa:secure_password@localhost:1433/employee_management?driver=ODBC+Driver+17+for+SQL+Server
 SESSION_SECRET=your_secure_secret_key
-PGHOST=localhost
-PGPORT=5432
-PGDATABASE=employee_management
-PGUSER=empadmin
-PGPASSWORD=secure_password
+MSSQL_HOST=localhost
+MSSQL_PORT=1433
+MSSQL_DATABASE=employee_management
+MSSQL_USER=sa
+MSSQL_PASSWORD=secure_password
 ```
 
-Replace `secure_password` with your actual PostgreSQL user password and generate a random value for `SESSION_SECRET`.
+Replace `secure_password` with your actual SQL Server password and generate a random value for `SESSION_SECRET`.
 
-#### Initialize the Database
-```bash
-flask db upgrade
-```
+On the first run the application will automatically create all database tables
+and seed initial data such as roles, a default admin account, document types and
+pay periods.
 
-#### Run Database Migration Scripts
-These scripts will set up essential database components:
+
+### Resetting the Database
+
+Use the `reset_database.py` script to drop all tables and recreate them. This is
+helpful when running tests or starting with a clean state.
+
 ```bash
-python add_document_types.py
-python create_pay_periods.py
-python add_employee_fields.py
-python add_missing_payroll_columns.py
-python add_tax_amount_to_payroll.py
-python migrate_leave_balance_to_hours.py
-python migrate_theme.py
+python reset_database.py --seed
 ```
 
 ### 5. Running the Application

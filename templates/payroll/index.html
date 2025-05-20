@@ -268,8 +268,8 @@
                         {% for payslip in recent_payslips %}
                         <a href="{{ url_for('payroll.view_payslip', payroll_id=payslip.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="fw-bold">{{ payslip.payroll_period.start_date.strftime('%b %d') }} - {{ payslip.payroll_period.end_date.strftime('%b %d') }}</div>
-                                <div class="text-muted small">{{ payslip.payroll_period.payment_date.strftime('%b %d, %Y') }}</div>
+                                <div class="fw-bold">{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d') }}</div>
+                                <div class="text-muted small">{{ payslip.pay_period.payment_date.strftime('%b %d, %Y') }}</div>
                             </div>
                             <div class="text-end">
                                 <div class="fw-bold">{{ payslip.net_pay|format_currency if payslip.net_pay else '$0.00' }}</div>
