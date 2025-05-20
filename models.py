@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -137,6 +137,13 @@ class Employee(db.Model):
     education_level = db.Column(db.String(100))  # Highest education achieved
     birth_date = db.Column(db.Date)  # Date of birth
     employment_type = db.Column(db.String(20))  # Full-time, Part-time, Consultant
+
+    # Benefits & Compensation
+    healthcare_enrolled = db.Column(db.Boolean, default=False)
+    healthcare_enrollment_date = db.Column(db.Date)
+    is_401k_enrolled = db.Column(db.Boolean, default=False)
+    k401_enrollment_date = db.Column(db.Date)
+    cell_phone_stipend = db.Column(db.Float, default=0.0)
     
     # One-to-one relationship with User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=True)
@@ -149,6 +156,9 @@ class Employee(db.Model):
     documents = db.relationship('Document', backref='employee', lazy='dynamic')
     attendance_records = db.relationship('Attendance', backref='employee', lazy='dynamic')
     leave_requests = db.relationship('LeaveRequest', backref='employee', lazy='dynamic')
+    dependents = db.relationship(
+        'Dependent', backref='employee', lazy='dynamic', cascade='all, delete-orphan'
+    )
     
     @property
     def full_name(self):
@@ -199,6 +209,33 @@ class Employee(db.Model):
         return years
 
     @property
+    def healthcare_eligible_date(self):
+        if not self.hire_date:
+            return None
+        return self.hire_date + timedelta(days=60)
+
+    @property
+    def is_healthcare_eligible(self) -> bool:
+        eligible = self.healthcare_eligible_date
+        return bool(eligible and datetime.now().date() >= eligible)
+
+    @property
+    def k401_eligible_date(self):
+        if not self.hire_date:
+            return None
+        return self.hire_date + timedelta(days=180)
+
+    @property
+    def is_401k_eligible(self) -> bool:
+        eligible = self.k401_eligible_date
+        return bool(eligible and datetime.now().date() >= eligible)
+
+    @property
+    def k401_vesting_date(self):
+        start = self.k401_enrollment_date or self.k401_eligible_date
+        return start + timedelta(days=1095) if start else None
+
+    @property
     def initials(self) -> str:
         """Initials used in avatar placeholders."""
         first = self.first_name[0] if self.first_name else ''
@@ -207,6 +244,23 @@ class Employee(db.Model):
     
     def __repr__(self):
         return f'<Employee {self.employee_id}: {self.full_name}>'
+
+
+# Dependent model
+class Dependent(db.Model):
+    __tablename__ = 'dependents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    birth_date = db.Column(db.Date, nullable=False)
+    relationship = db.Column(db.String(50))
+    healthcare_enrolled = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Dependent {self.name}>'
 
 # Document Type model
 class DocumentType(db.Model):

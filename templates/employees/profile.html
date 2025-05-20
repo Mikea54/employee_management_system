@@ -247,6 +247,49 @@
                         <p>None</p>
                         {% endif %}
                     </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-heartbeat mr-2"></i> Healthcare Program</h6>
+                        <p>
+                            {% if employee.healthcare_enrolled %}
+                                Enrolled
+                            {% else %}
+                                Not Enrolled{% if employee.is_healthcare_eligible %} (Eligible {{ employee.healthcare_eligible_date.strftime('%Y-%m-%d') }}){% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-piggy-bank mr-2"></i> 401K Program</h6>
+                        <p>
+                            {% if employee.is_401k_enrolled %}
+                                Enrolled{% if employee.k401_vesting_date %} (Vested {{ employee.k401_vesting_date.strftime('%Y-%m-%d') }}){% endif %}
+                            {% else %}
+                                Not Enrolled{% if employee.is_401k_eligible %} (Eligible {{ employee.k401_eligible_date.strftime('%Y-%m-%d') }}){% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-mobile-alt mr-2"></i> Cell Phone Stipend</h6>
+                        <p>${{ "{:,.2f}".format(employee.cell_phone_stipend or 0) }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-child mr-2"></i> Dependents</h6>
+                        {% if employee.dependents.count() > 0 %}
+                        <ul class="list-group list-group-flush">
+                            {% for dep in employee.dependents %}
+                            <li class="list-group-item bg-transparent">
+                                {{ dep.name }} - {{ dep.birth_date.strftime('%Y-%m-%d') }}{% if dep.relationship %} ({{ dep.relationship }}){% endif %}
+                                {% if dep.healthcare_enrolled %}<span class="badge bg-success ms-2">Health</span>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>None</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
