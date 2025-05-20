@@ -1,6 +1,7 @@
 from datetime import date
 from app import app, db
 from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType, PayPeriod
+from create_pay_periods import create_initial_pay_periods
 
 def create_document_types():
     """Create standard document types"""
