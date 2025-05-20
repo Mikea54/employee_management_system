@@ -25,3 +25,4 @@ def format_date(value, fmt: str = "%b %d, %Y") -> str:
     if isinstance(value, (datetime, date)):
         return value.strftime(fmt)
     return str(value)
+

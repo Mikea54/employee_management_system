@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app import db
 from models import Employee, PayPeriod, Timesheet, TimeEntry, Attendance
+from create_pay_periods import create_initial_pay_periods
 from utils.helpers import role_required
 from datetime import datetime, timedelta, date
 from sqlalchemy.exc import SQLAlchemyError
@@ -188,6 +189,8 @@ def index():
 @role_required('Admin', 'HR')
 def pay_periods():
     """Manage pay periods"""
+    if PayPeriod.query.count() == 0:
+        create_initial_pay_periods()
     pay_periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     return render_template('timesheets/pay_periods.html', pay_periods=pay_periods)
 
