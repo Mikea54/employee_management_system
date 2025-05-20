@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from app import db
 from models import Employee, PayPeriod, Timesheet, TimeEntry, Attendance, Payroll, PayrollEntry
 from create_pay_periods import create_initial_pay_periods
 from utils.helpers import role_required
+from utils.pdf_utils import html_to_text, simple_pdf
+import io
 from datetime import datetime, timedelta, date
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, and_, or_
@@ -125,6 +127,21 @@ def my_timesheet():
     
     # Redirect to the view page for this timesheet
     return redirect(url_for('timesheets.view_timesheet', timesheet_id=timesheet.id))
+
+
+@timesheet_bp.route('/export-pdf', methods=['POST'])
+@login_required
+def export_pdf_route():
+    """Generate a PDF from provided HTML table content."""
+    html_content = request.json.get('html', '') if request.is_json else ''
+    rendered = render_template('timesheets/pdf_report.html', table_html=html_content)
+    pdf_bytes = simple_pdf(html_to_text(rendered))
+    return send_file(
+        io.BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='timesheet_report.pdf'
+    )
 
 @timesheet_bp.route('/')
 @login_required

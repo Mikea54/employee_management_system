@@ -156,8 +156,7 @@ function setupExportButtons() {
             if (format === 'csv') {
                 exportTableToCSV(tableId, `attendance_report_${new Date().toISOString().slice(0, 10)}.csv`);
             } else if (format === 'pdf') {
-                // PDF export would be implemented here
-                alert('PDF export functionality would be implemented here');
+                exportTableToPDF(tableId, `attendance_report_${new Date().toISOString().slice(0, 10)}.pdf`);
             }
         });
     });
