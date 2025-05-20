@@ -317,6 +317,12 @@ class PayPeriod(db.Model):
         """Check if the current date falls within this pay period"""
         today = datetime.now().date()
         return self.start_date <= today <= self.end_date
+
+    @property
+    def is_future(self):
+        """Check if this pay period is in the future."""
+        today = datetime.now().date()
+        return self.start_date > today
     
     @property
     def total_days(self):

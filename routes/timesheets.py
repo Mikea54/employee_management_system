@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app import db
-from models import Employee, PayPeriod, Timesheet, TimeEntry, Attendance
+from models import Employee, PayPeriod, Timesheet, TimeEntry, Attendance, Payroll, PayrollEntry
 from create_pay_periods import create_initial_pay_periods
 from utils.helpers import role_required
 from datetime import datetime, timedelta, date
@@ -189,10 +189,19 @@ def index():
 @role_required('Admin', 'HR')
 def pay_periods():
     """Manage pay periods"""
-    if PayPeriod.query.count() == 0:
-        create_initial_pay_periods()
     pay_periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     return render_template('timesheets/pay_periods.html', pay_periods=pay_periods)
+
+
+@timesheet_bp.route('/periods/init', methods=['POST'])
+@login_required
+@role_required('Admin', 'HR')
+def init_pay_periods():
+    """Create initial pay periods from a provided start date."""
+    start_date = request.form.get('initial_start_date')
+    create_initial_pay_periods(start_date)
+    flash('Initial pay periods created.', 'success')
+    return redirect(url_for('timesheets.pay_periods'))
 
 @timesheet_bp.route('/periods/create', methods=['POST'])
 @login_required
@@ -353,6 +362,25 @@ def delete_pay_period(period_id):
         db.session.rollback()
         flash(f'Error deleting pay period: {str(e)}', 'danger')
     
+    return redirect(url_for('timesheets.pay_periods'))
+
+
+@timesheet_bp.route('/periods/delete-all', methods=['POST'])
+@login_required
+@role_required('Admin', 'HR')
+def delete_all_pay_periods():
+    """Delete all pay periods and related data."""
+    try:
+        TimeEntry.query.delete()
+        Timesheet.query.delete()
+        PayrollEntry.query.delete()
+        Payroll.query.delete()
+        PayPeriod.query.delete()
+        db.session.commit()
+        flash('All pay periods deleted successfully.', 'success')
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        flash(f'Error deleting all pay periods: {str(e)}', 'danger')
     return redirect(url_for('timesheets.pay_periods'))
 
 @timesheet_bp.route('/employee/<int:employee_id>')
