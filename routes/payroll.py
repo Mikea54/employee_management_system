@@ -8,9 +8,25 @@ from sqlalchemy import func, desc, and_, case, or_, extract
 from sqlalchemy.orm import aliased
 
 from app import db
-from models import (Employee, Department, PayPeriod, Payroll, PayrollEntry, SalaryComponent,
-                   ComponentType, EmployeeCompensation, CompensationReport, SalaryStructure,
-                   EmployeeBenefit, User, LeaveBalance, LeaveType, Benefit)
+from models import (
+    Employee,
+    Department,
+    PayPeriod,
+    Payroll,
+    PayrollEntry,
+    SalaryComponent,
+    ComponentType,
+    EmployeeCompensation,
+    CompensationReport,
+    SalaryStructure,
+    EmployeeBenefit,
+    User,
+    LeaveBalance,
+    LeaveType,
+    Benefit,
+    EmployeeIncentive,
+    IncentiveType,
+)
 from utils.roles import role_required
 from utils.helpers import get_current_employee, format_currency
 
@@ -1038,3 +1054,51 @@ def download_payslip(payroll_id):
     # For now, we'll just show a message
     flash('Payslip PDF download functionality is not implemented yet', 'info')
     return redirect(url_for('payroll.view_payslip', payroll_id=payroll_id))
+
+
+# ---------------------------------------------------------------------------
+# Incentive Management
+# ---------------------------------------------------------------------------
+
+@payroll.route('/incentives')
+@login_required
+@role_required('Admin', 'HR')
+def incentives():
+    """List all employee incentives."""
+    incentives = EmployeeIncentive.query.order_by(EmployeeIncentive.date_awarded.desc()).all()
+    employees = Employee.query.order_by(Employee.first_name, Employee.last_name).all()
+    return render_template('payroll/incentives.html', incentives=incentives, employees=employees)
+
+
+@payroll.route('/incentives/create', methods=['GET', 'POST'])
+@login_required
+@role_required('Admin', 'HR')
+def create_incentive():
+    """Create a bonus or commission record for an employee."""
+    if request.method == 'POST':
+        employee_id = request.form.get('employee_id', type=int)
+        incentive_type = request.form.get('incentive_type')
+        amount = request.form.get('amount', type=float)
+        date_awarded = request.form.get('date_awarded')
+        description = request.form.get('description')
+
+        if not employee_id or not incentive_type or amount is None:
+            flash('Please provide all required fields.', 'danger')
+            return redirect(url_for('payroll.create_incentive'))
+
+        incentive = EmployeeIncentive(
+            employee_id=employee_id,
+            incentive_type=incentive_type,
+            amount=amount,
+            date_awarded=datetime.strptime(date_awarded, '%Y-%m-%d').date() if date_awarded else datetime.utcnow().date(),
+            description=description,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        db.session.add(incentive)
+        db.session.commit()
+        flash('Incentive recorded.', 'success')
+        return redirect(url_for('payroll.incentives'))
+
+    employees = Employee.query.order_by(Employee.first_name, Employee.last_name).all()
+    return render_template('payroll/create_incentive.html', employees=employees, incentive_types=[IncentiveType.BONUS, IncentiveType.COMMISSION])

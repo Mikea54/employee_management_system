@@ -511,6 +511,11 @@ class ComponentType:
     TAX = 'tax'
     STIPEND = 'stipend'
 
+# New enumeration for incentives
+class IncentiveType:
+    BONUS = 'bonus'
+    COMMISSION = 'commission'
+
 # Salary Component model
 class SalaryComponent(db.Model):
     __tablename__ = 'salary_components'
@@ -603,6 +608,24 @@ class PayrollEntry(db.Model):
     
     def __repr__(self):
         return f'<PayrollEntry {self.component_name}: ${self.amount}>'
+
+# Incentives such as bonuses and commissions
+class EmployeeIncentive(db.Model):
+    __tablename__ = 'employee_incentives'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    incentive_type = db.Column(db.String(20), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date_awarded = db.Column(db.Date, default=datetime.utcnow)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    employee = db.relationship('Employee', backref='incentives')
+
+    def __repr__(self):
+        return f'<EmployeeIncentive {self.employee_id} {self.incentive_type}: ${self.amount}>'
 
 # Benefits model
 class Benefit(db.Model):

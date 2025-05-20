@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block title %}Employee Incentives{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Employee Incentives</h1>
+        <a href="{{ url_for('payroll.create_incentive') }}" class="btn btn-primary">Add Incentive</a>
+    </div>
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in incentives %}
+                    <tr>
+                        <td>{{ item.employee.full_name }}</td>
+                        <td>{{ item.incentive_type.title() }}</td>
+                        <td>{{ item.amount|format_currency }}</td>
+                        <td>{{ item.date_awarded|format_date }}</td>
+                        <td>{{ item.description }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center">No incentives recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

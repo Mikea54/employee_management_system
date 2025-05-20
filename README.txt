@@ -154,7 +154,8 @@ When you first set up the application, a default admin account is created:
 
 ### Payroll Processing
 - Basic pay calculation
-- Bonuses and allowances
+- Bonuses, commissions and allowances
+- Track individual bonus and commission awards
 - Deductions management
 - Tax calculation
 - Payslip generation
