@@ -243,6 +243,57 @@ def create_pay_period():
     
     return redirect(url_for('timesheets.pay_periods'))
 
+
+@timesheet_bp.route('/periods/create-range', methods=['POST'])
+@login_required
+@role_required('Admin', 'HR')
+def create_pay_period_range():
+    """Create multiple pay periods in bulk."""
+    start_date_str = request.form.get('start_date')
+    count_str = request.form.get('period_count')
+
+    if not start_date_str or not count_str:
+        flash('Start date and number of periods are required.', 'danger')
+        return redirect(url_for('timesheets.pay_periods'))
+
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        count = int(count_str)
+        if count <= 0:
+            raise ValueError('count must be positive')
+    except ValueError:
+        flash('Invalid input for bulk creation.', 'danger')
+        return redirect(url_for('timesheets.pay_periods'))
+
+    periods_created = 0
+    for i in range(count):
+        period_start = start_date + timedelta(days=14 * i)
+        period_end = period_start + timedelta(days=13)
+
+        overlapping = PayPeriod.query.filter(
+            or_(
+                and_(PayPeriod.start_date <= period_start, PayPeriod.end_date >= period_start),
+                and_(PayPeriod.start_date <= period_end, PayPeriod.end_date >= period_end),
+                and_(PayPeriod.start_date >= period_start, PayPeriod.end_date <= period_end),
+            )
+        ).first()
+
+        if overlapping:
+            flash(f'Period starting {period_start} overlaps with an existing period.', 'danger')
+            break
+
+        db.session.add(PayPeriod(start_date=period_start, end_date=period_end, status='Open'))
+        periods_created += 1
+
+    if periods_created:
+        db.session.commit()
+        flash(f'Created {periods_created} pay periods.', 'success')
+    else:
+        db.session.rollback()
+        flash('No pay periods were created.', 'warning')
+
+    return redirect(url_for('timesheets.pay_periods'))
+
 @timesheet_bp.route('/periods/<int:period_id>/close', methods=['POST'])
 @login_required
 @role_required('Admin', 'HR')

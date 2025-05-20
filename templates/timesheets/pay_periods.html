@@ -41,6 +41,30 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Bulk Create Pay Periods -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Bulk Create Pay Periods</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('timesheets.create_pay_period_range') }}">
+                        <div class="mb-3">
+                            <label for="range_start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="range_start_date" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="period_count" class="form-label">Number of Periods</label>
+                            <input type="number" class="form-control" id="period_count" name="period_count" min="1" value="5" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i> Create Range
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
             
             <!-- Pay Period Guidelines -->
             <div class="card shadow mt-4">
@@ -159,6 +183,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Format dates for input elements
         document.getElementById('start_date').value = formatDateForInput(nextMonday);
         document.getElementById('end_date').value = formatDateForInput(endDate);
+
+        const bulkStart = document.getElementById('range_start_date');
+        if (bulkStart) {
+            bulkStart.value = formatDateForInput(nextMonday);
+        }
     }
     
     // Format date for input field (YYYY-MM-DD)
