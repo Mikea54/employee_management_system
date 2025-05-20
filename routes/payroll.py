@@ -76,7 +76,7 @@ def payroll_periods():
     # Add a property to check if a period is current
     current_date = datetime.now().date()
     for period in periods:
-        period.is_current = (period.start_date.date() <= current_date <= period.end_date.date())
+        period.is_current = (period.start_date <= current_date <= period.end_date)
         # Calculate the total days in the period
         period.total_days = (period.end_date - period.start_date).days + 1
     
