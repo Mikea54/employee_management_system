@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -85,6 +85,51 @@ def calculate_payroll_expense(department_id=None):
     total_expense = total_salary + total_benefits
 
     return total_salary, total_benefits, total_expense
+
+
+def create_simple_pdf(text: str, file_path: str) -> None:
+    """Create a very basic PDF file with the given text.
+
+    This utility avoids external dependencies by writing the minimal
+    PDF objects needed to render the provided lines of text using the
+    built in Helvetica font.
+    """
+    lines = text.splitlines()
+    content_lines = []
+    y = 750
+    for line in lines:
+        safe_line = line.replace('(', '\\(').replace(')', '\\)')
+        content_lines.append(f"1 0 0 1 50 {y} Tm ({safe_line}) Tj")
+        y -= 15
+    stream = "BT\n/F1 12 Tf\n" + "\n".join(content_lines) + "\nET"
+
+    objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        f"<< /Length {len(stream)} >>\nstream\n{stream}\nendstream",
+    ]
+
+    with open(file_path, "wb") as f:
+        f.write(b"%PDF-1.4\n")
+        offsets = []
+        for i, obj in enumerate(objects, start=1):
+            offsets.append(f.tell())
+            f.write(f"{i} 0 obj\n".encode())
+            f.write(obj.encode())
+            f.write(b"\nendobj\n")
+        xref_offset = f.tell()
+        f.write(b"xref\n")
+        f.write(f"0 {len(objects)+1}\n".encode())
+        f.write(b"0000000000 65535 f \n")
+        for off in offsets:
+            f.write(f"{off:010d} 00000 n \n".encode())
+        f.write(b"trailer\n")
+        f.write(f"<< /Size {len(objects)+1} /Root 1 0 R >>\n".encode())
+        f.write(b"startxref\n")
+        f.write(f"{xref_offset}\n".encode())
+        f.write(b"%%EOF")
 
 # Budget Routes
 
@@ -668,17 +713,28 @@ def view_compensation_report(report_id):
 def generate_report_pdf(report_id):
     """Generate PDF for a compensation report"""
     report = CompensationReport.query.get_or_404(report_id)
-    
+
     try:
-        # PDF generation logic would go here
-        # For now, just update the file path
-        report.report_file_path = f'/static/reports/compensation_{report.employee_id}_{report.year}.pdf'
+        reports_dir = os.path.join(current_app.root_path, 'static', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+
+        filename = f'compensation_{report.employee_id}_{report.year}.pdf'
+        file_path = os.path.join(reports_dir, filename)
+
+        text = render_template('budgeting/report_pdf.txt', report=report)
+        create_simple_pdf(text, file_path)
+
+        report.report_file_path = f'/static/reports/{filename}'
         db.session.commit()
-        
-        flash('PDF report generated successfully.', 'success')
-        
+
+        return send_file(
+            file_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+
     except Exception as e:
         db.session.rollback()
         flash(f'Error generating PDF report: {str(e)}', 'danger')
-    
-    return redirect(url_for('budgeting.view_compensation_report', report_id=report_id))
+        return redirect(url_for('budgeting.view_compensation_report', report_id=report_id))
