@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
-from models import User, Role, Department, Employee
+from models import User, Role, Department, Employee, PayPeriod, PayrollPeriod
 from utils.helpers import role_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -396,4 +396,18 @@ def bulk_update_template():
         as_attachment=True,
         download_name=filename,
         mimetype=mimetype
+    )
+
+
+@admin_bp.route('/pay-periods')
+@login_required
+@role_required('Admin', 'HR')
+def manage_pay_periods():
+    """Unified management view for timesheet and payroll pay periods"""
+    timesheet_periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    return render_template(
+        'admin/pay_periods.html',
+        timesheet_periods=timesheet_periods,
+        payroll_periods=payroll_periods
     )

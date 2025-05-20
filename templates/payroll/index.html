@@ -9,7 +9,7 @@
         <h1 class="h3 mb-0 text-light">Payroll Dashboard</h1>
         {% if current_user.has_role(['Admin', 'HR']) %}
         <div>
-            <a href="{{ url_for('payroll.payroll_periods') }}" class="btn btn-primary">
+            <a href="{{ url_for('admin.manage_pay_periods') }}" class="btn btn-primary">
                 <i class="fas fa-calendar-alt me-1"></i> Manage Pay Periods
             </a>
             <a href="{{ url_for('payroll.payslips') }}" class="btn btn-info ms-2">
