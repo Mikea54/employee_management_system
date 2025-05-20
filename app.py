@@ -66,6 +66,8 @@ with app.app_context():
     # Import models to ensure they're registered with SQLAlchemy
     import models
     db.create_all()
+    from seed_data import create_seed_data
+    create_seed_data()
     
     # Set up user loader
     @login_manager.user_loader
