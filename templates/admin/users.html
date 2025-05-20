@@ -194,34 +194,12 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Permissions</label>
+                        {% for perm in all_permissions %}
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_employee_view" name="permissions[]" value="employee_view">
-                            <label class="form-check-label" for="perm_employee_view">View Employees</label>
+                            <input class="form-check-input" type="checkbox" id="perm_{{ perm.name }}" name="permissions[]" value="{{ perm.name }}">
+                            <label class="form-check-label" for="perm_{{ perm.name }}">{{ perm.description or perm.name }}</label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_employee_edit" name="permissions[]" value="employee_edit">
-                            <label class="form-check-label" for="perm_employee_edit">Edit Employees</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_attendance_manage" name="permissions[]" value="attendance_manage">
-                            <label class="form-check-label" for="perm_attendance_manage">Manage Attendance</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_leave_approve" name="permissions[]" value="leave_approve">
-                            <label class="form-check-label" for="perm_leave_approve">Approve Leave Requests</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_document_manage" name="permissions[]" value="document_manage">
-                            <label class="form-check-label" for="perm_document_manage">Manage Documents</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_user_manage" name="permissions[]" value="user_manage">
-                            <label class="form-check-label" for="perm_user_manage">Manage Users</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="perm_system_admin" name="permissions[]" value="system_admin">
-                            <label class="form-check-label" for="perm_system_admin">System Administration</label>
-                        </div>
+                        {% endfor %}
                     </div>
                 </form>
             </div>

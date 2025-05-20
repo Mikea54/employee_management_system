@@ -32,46 +32,18 @@
                         
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3">{{ role.description.split('\nPermissions:')[0] if role.description and '\nPermissions:' in role.description else role.description }}</textarea>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ role.description }}</textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Permissions</label>
+                            {% for perm in all_permissions %}
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_employee_view" name="permissions[]" value="employee_view" 
-                                {% if permissions and 'employee_view' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_employee_view">View Employees</label>
+                                <input class="form-check-input" type="checkbox" id="perm_{{ perm.name }}" name="permissions[]" value="{{ perm.name }}"
+                                {% if permissions and perm.name in permissions %}checked{% endif %}>
+                                <label class="form-check-label" for="perm_{{ perm.name }}">{{ perm.description or perm.name }}</label>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_employee_edit" name="permissions[]" value="employee_edit" 
-                                {% if permissions and 'employee_edit' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_employee_edit">Edit Employees</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_attendance_manage" name="permissions[]" value="attendance_manage" 
-                                {% if permissions and 'attendance_manage' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_attendance_manage">Manage Attendance</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_leave_approve" name="permissions[]" value="leave_approve" 
-                                {% if permissions and 'leave_approve' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_leave_approve">Approve Leave Requests</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_document_manage" name="permissions[]" value="document_manage" 
-                                {% if permissions and 'document_manage' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_document_manage">Manage Documents</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_user_manage" name="permissions[]" value="user_manage" 
-                                {% if permissions and 'user_manage' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_user_manage">Manage Users</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="perm_system_admin" name="permissions[]" value="system_admin" 
-                                {% if permissions and 'system_admin' in permissions %}checked{% endif %}>
-                                <label class="form-check-label" for="perm_system_admin">System Administration</label>
-                            </div>
+                            {% endfor %}
                         </div>
                         
                         <!-- Role Users Information -->

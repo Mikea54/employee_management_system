@@ -1,15 +1,6 @@
 from datetime import date
 from app import app, db
-from models import (
-    User,
-    Role,
-    Department,
-    Employee,
-    DocumentType,
-    LeaveType,
-    PayPeriod,
-)
-from create_pay_periods import create_initial_pay_periods
+from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType, PayPeriod
 
 def create_document_types():
     """Create standard document types"""
@@ -48,6 +39,25 @@ def create_document_types():
     db.session.commit()
     print("Document types created successfully.")
 
+
+def create_permissions():
+    """Create standard permissions"""
+    perms = [
+        ("employee_view", "View Employees"),
+        ("employee_edit", "Edit Employees"),
+        ("attendance_manage", "Manage Attendance"),
+        ("leave_approve", "Approve Leave Requests"),
+        ("document_manage", "Manage Documents"),
+        ("user_manage", "Manage Users"),
+        ("system_admin", "System Administration"),
+    ]
+
+    for name, desc in perms:
+        if not Permission.query.filter_by(name=name).first():
+            db.session.add(Permission(name=name, description=desc))
+    db.session.commit()
+    print("Permissions created successfully.")
+
 def create_seed_data():
     """Creates initial seed data for the application"""
     with app.app_context():
@@ -67,6 +77,9 @@ def create_seed_data():
             return
         
         print("Creating seed data...")
+
+        # Create base permissions
+        create_permissions()
         
         # Create roles
         admin_role = Role(name="Admin", description="Administrator with full access")
@@ -75,6 +88,24 @@ def create_seed_data():
         employee_role = Role(name="Employee", description="Regular employee")
         
         db.session.add_all([admin_role, hr_role, manager_role, employee_role])
+        db.session.commit()
+
+        # Assign permissions to roles
+        perms = {p.name: p for p in Permission.query.all()}
+        admin_role.permissions.extend(perms.values())
+        hr_role.permissions.extend([p for p in [
+            perms.get('employee_view'),
+            perms.get('employee_edit'),
+            perms.get('attendance_manage'),
+            perms.get('leave_approve'),
+            perms.get('document_manage'),
+            perms.get('user_manage'),
+        ] if p])
+        manager_role.permissions.extend([p for p in [
+            perms.get('employee_view'),
+            perms.get('attendance_manage'),
+            perms.get('leave_approve'),
+        ] if p])
         db.session.commit()
         
         # Create departments

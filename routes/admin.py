@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
-from models import User, Role, Department, Employee, PayPeriod
+from models import User, Role, Permission, Department, Employee, PayPeriod
 from utils.helpers import role_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -45,7 +45,8 @@ def user_management():
     """User management page."""
     users = User.query.all()
     roles = Role.query.all()
-    return render_template('admin/users.html', users=users, roles=roles)
+    all_permissions = Permission.query.all()
+    return render_template('admin/users.html', users=users, roles=roles, all_permissions=all_permissions)
 
 @admin_bp.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -133,11 +134,12 @@ def create_role():
     new_role = Role()
     new_role.name = name
     new_role.description = description
-    
-    # Store permissions as comma-separated string in description field for now
-    # In a real application, you would use a separate permissions table
-    if permissions:
-        new_role.description = f"{description}\nPermissions: {', '.join(permissions)}"
+
+    # Attach permissions
+    for perm_name in permissions:
+        perm = Permission.query.filter_by(name=perm_name).first()
+        if perm:
+            new_role.permissions.append(perm)
     
     db.session.add(new_role)
     db.session.commit()
@@ -160,34 +162,35 @@ def edit_role(role_id):
         # Validate data
         if not name:
             flash('Role name is required.', 'danger')
-            return render_template('admin/edit_role.html', role=role)
+            all_permissions = Permission.query.all()
+            return render_template('admin/edit_role.html', role=role, permissions=permissions, all_permissions=all_permissions)
         
         # Check if name already exists for another role
         existing_role = Role.query.filter(Role.name == name, Role.id != role_id).first()
         if existing_role:
             flash('Role name already exists.', 'danger')
-            return render_template('admin/edit_role.html', role=role)
+            all_permissions = Permission.query.all()
+            return render_template('admin/edit_role.html', role=role, permissions=permissions, all_permissions=all_permissions)
         
         # Update role
         role.name = name
         role.description = description
-        
-        # Store permissions as comma-separated string in description field for now
-        if permissions:
-            role.description = f"{description}\nPermissions: {', '.join(permissions)}"
+
+        # Update permissions
+        role.permissions.clear()
+        for perm_name in permissions:
+            perm = Permission.query.filter_by(name=perm_name).first()
+            if perm:
+                role.permissions.append(perm)
         
         db.session.commit()
         flash('Role updated successfully.', 'success')
         return redirect(url_for('admin.user_management'))
     
-    # Extract permissions from description if they exist
-    permissions = []
-    if role.description and 'Permissions:' in role.description:
-        parts = role.description.split('Permissions:')
-        if len(parts) > 1:
-            permissions = [p.strip() for p in parts[1].split(',')]
-    
-    return render_template('admin/edit_role.html', role=role, permissions=permissions)
+    # Get current permission names
+    permissions = [p.name for p in role.permissions]
+    all_permissions = Permission.query.all()
+    return render_template('admin/edit_role.html', role=role, permissions=permissions, all_permissions=all_permissions)
 
 @admin_bp.route('/departments', methods=['GET'])
 @login_required

@@ -3,6 +3,13 @@ from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Association table between roles and permissions
+role_permissions = db.Table(
+    'role_permissions',
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'), primary_key=True),
+    db.Column('permission_id', db.Integer, db.ForeignKey('permissions.id'), primary_key=True)
+)
+
 # Define user roles
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -12,9 +19,26 @@ class Role(db.Model):
     description = db.Column(db.String(250))
     
     users = db.relationship('User', backref='role', lazy='dynamic')
+    permissions = db.relationship('Permission', secondary=role_permissions, backref='roles', lazy='dynamic')
+
+    def has_permission(self, perm_name: str) -> bool:
+        """Check if role has the specified permission."""
+        return any(p.name == perm_name for p in self.permissions)
     
     def __repr__(self):
         return f'<Role {self.name}>'
+
+
+# Permission model
+class Permission(db.Model):
+    __tablename__ = 'permissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+    def __repr__(self):
+        return f'<Permission {self.name}>'
 
 # Define departments
 class Department(db.Model):
@@ -78,6 +102,12 @@ class User(UserMixin, db.Model):
             return self.role.name in roles
         else:
             return self.role.name == roles
+
+    def has_permission(self, perm_name: str) -> bool:
+        """Check if the user's role includes the given permission."""
+        if not self.role:
+            return False
+        return self.role.has_permission(perm_name)
     
     def __repr__(self):
         return f'<User {self.username}>'
