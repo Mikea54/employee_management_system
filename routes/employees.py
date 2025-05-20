@@ -179,7 +179,8 @@ def create_employee():
                 'status': request.form.get('status', 'Active'),
                 'is_manager': bool(request.form.get('is_manager')),  # Checkbox returns 'on' if checked or None if not
                 'level': request.form.get('level'),
-                'education_level': request.form.get('education_level')
+                'education_level': request.form.get('education_level'),
+                'employment_type': request.form.get('employment_type')
             }
             
             # Handle birth_date if provided
@@ -286,6 +287,7 @@ def edit_employee(id):
             employee.is_manager = bool(request.form.get('is_manager'))
             employee.level = request.form.get('level')
             employee.education_level = request.form.get('education_level')
+            employee.employment_type = request.form.get('employment_type')
             
             # Handle dates
             new_hire_date = request.form.get('hire_date')

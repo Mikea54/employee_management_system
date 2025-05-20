@@ -179,6 +179,12 @@
                         <h6><i class="fas fa-level-up-alt mr-2"></i> Employee Level</h6>
                         <p>{{ employee.level if employee.level else 'Not specified' }}</p>
                     </div>
+
+                    <!-- Employment Type -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-briefcase mr-2"></i> Employment Type</h6>
+                        <p>{{ employee.employment_type if employee.employment_type else 'Not specified' }}</p>
+                    </div>
                     
                     <!-- Is Manager -->
                     <div class="mb-3">

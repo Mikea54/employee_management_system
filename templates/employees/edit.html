@@ -231,7 +231,7 @@
                     </div>
                     
                     <!-- Education Level -->
-                    <div class="col-md-8 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="education_level" class="form-label">Education Level</label>
                         <select class="form-select" id="education_level" name="education_level">
                             <option value="" {% if not employee or not employee.education_level %}selected{% endif %}>Select Education Level</option>
@@ -244,6 +244,17 @@
                             <option value="Trade School" {% if employee and employee.education_level == 'Trade School' %}selected{% endif %}>Trade School</option>
                             <option value="Certification" {% if employee and employee.education_level == 'Certification' %}selected{% endif %}>Certification</option>
                             <option value="Other" {% if employee and employee.education_level == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Employment Type -->
+                    <div class="col-md-4 mb-3">
+                        <label for="employment_type" class="form-label">Employment Type</label>
+                        <select class="form-select" id="employment_type" name="employment_type">
+                            <option value="" {% if not employee or not employee.employment_type %}selected{% endif %}>Select Type</option>
+                            <option value="Full-time" {% if employee and employee.employment_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                            <option value="Part-time" {% if employee and employee.employment_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                            <option value="Consultant" {% if employee and employee.employment_type == 'Consultant' %}selected{% endif %}>Consultant</option>
                         </select>
                     </div>
                 </div>
