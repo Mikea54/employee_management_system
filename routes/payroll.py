@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app, abort, send_file
+from io import BytesIO
 from flask_login import login_required, current_user
 from sqlalchemy import func, desc, and_, case, or_, extract
 from sqlalchemy.orm import aliased
@@ -1097,10 +1098,39 @@ def download_payslip(payroll_id):
     if not (is_admin_or_hr or is_owner):
         abort(403)  # Forbidden
     
-    # This would be where you generate a PDF
-    # For now, we'll just show a message
-    flash('Payslip PDF download functionality is not implemented yet', 'info')
-    return redirect(url_for('payroll.view_payslip', payroll_id=payroll_id))
+    # Get payroll entries for the payslip
+    entries = PayrollEntry.query.filter_by(payroll_id=payroll_id).all()
+    earnings = [e for e in entries if e.type == 'Earning']
+    deductions = [e for e in entries if e.type == 'Deduction']
+
+    # Render the payslip HTML
+    html = render_template(
+        'payroll/view_payslip.html',
+        payslip=payslip,
+        earnings=earnings,
+        deductions=deductions,
+    )
+
+    pdf_bytes = None
+
+    # Attempt to generate PDF using pdfkit or WeasyPrint
+    try:
+        import pdfkit
+        pdf_bytes = pdfkit.from_string(html, False)
+    except Exception:
+        try:
+            from weasyprint import HTML
+            pdf_bytes = HTML(string=html).write_pdf()
+        except Exception as e:
+            current_app.logger.error(f"Failed to generate payslip PDF: {e}")
+            abort(500, description="Unable to generate payslip PDF")
+
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'payslip_{payroll_id}.pdf'
+    )
 
 
 # ---------------------------------------------------------------------------
