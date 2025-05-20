@@ -455,7 +455,9 @@ class Payroll(db.Model):
     
     # Relationships
     employee = db.relationship('Employee', backref='payrolls')
-    entries = db.relationship('PayrollEntry', backref='payroll', lazy='dynamic')
+    entries = db.relationship(
+        'PayrollEntry', back_populates='payroll', lazy='dynamic'
+    )
     
     def __repr__(self):
         return f'<Payroll {self.employee.full_name}: {self.pay_period.start_date} to {self.pay_period.end_date}>'
@@ -477,7 +479,8 @@ class PayrollEntry(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Reference to parent Payroll
-    payroll_obj = db.relationship('Payroll')
+    payroll = db.relationship('Payroll', back_populates='entries')
+    payroll_obj = db.relationship('Payroll', overlaps='payroll,entries')
     
     def __repr__(self):
         return f'<PayrollEntry {self.component_name}: ${self.amount}>'
