@@ -136,6 +136,7 @@ class Employee(db.Model):
     level = db.Column(db.String(50))  # Employee level (e.g., Entry, Associate, Senior, Lead, etc.)
     education_level = db.Column(db.String(100))  # Highest education achieved
     birth_date = db.Column(db.Date)  # Date of birth
+    employment_type = db.Column(db.String(20))  # Full-time, Part-time, Consultant
     
     # One-to-one relationship with User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=True)

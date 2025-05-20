@@ -64,19 +64,19 @@ def process_employee_import(file, upload_folder):
             for index, row in df.iterrows():
                 try:
                     # Skip if mandatory fields are empty
-                    if (pd.isna(row['first_name']) or pd.isna(row['last_name']) or 
+                    if (pd.isna(row['first_name']) or pd.isna(row['last_name']) or
                             pd.isna(row['email']) or pd.isna(row['hire_date'])):
                         errors.append(f"Row {index+2}: Missing mandatory fields")
                         error_count += 1
                         continue
-                    
-                    # Check if employee with this email already exists
-                    existing_employee = Employee.query.filter_by(email=row['email']).first()
-                    if existing_employee:
-                        errors.append(f"Row {index+2}: Employee with email {row['email']} already exists")
-                        error_count += 1
-                        continue
-                    
+
+                    # Lookup existing employee by employee_id or email
+                    existing_employee = None
+                    if 'employee_id' in df.columns and not pd.isna(row.get('employee_id')):
+                        existing_employee = Employee.query.filter_by(employee_id=str(row['employee_id'])).first()
+                    if existing_employee is None:
+                        existing_employee = Employee.query.filter_by(email=row['email']).first()
+
                     # Handle department if present
                     department_id = None
                     if 'department' in df.columns and not pd.isna(row['department']):
@@ -88,22 +88,21 @@ def process_employee_import(file, upload_folder):
                             # If configured to create departments
                             errors.append(f"Row {index+2}: Department '{row['department']}' not found")
                     
-                    # Handle manager if present
+                    # Handle manager if present (by email or employee_id)
                     manager_id = None
-                    if 'manager_email' in df.columns and not pd.isna(row['manager_email']):
-                        # Look up manager by email
+                    if 'manager_email' in df.columns and not pd.isna(row.get('manager_email')):
                         manager = Employee.query.filter_by(email=row['manager_email']).first()
+                        if manager:
+                            manager_id = manager.id
+                    if manager_id is None and 'manager_employee_id' in df.columns and not pd.isna(row.get('manager_employee_id')):
+                        manager = Employee.query.filter_by(employee_id=str(row['manager_employee_id'])).first()
                         if manager:
                             manager_id = manager.id
                     
                     # Parse hire date
                     try:
-                        if isinstance(row['hire_date'], str):
-                            hire_date = datetime.strptime(row['hire_date'], '%Y-%m-%d').date()
-                        else:
-                            # Assuming it's already a datetime
-                            hire_date = row['hire_date'].date()
-                    except (ValueError, AttributeError):
+                        hire_date = pd.to_datetime(row['hire_date']).date()
+                    except Exception:
                         errors.append(f"Row {index+2}: Invalid date format for hire_date. Use YYYY-MM-DD")
                         error_count += 1
                         continue
@@ -124,59 +123,66 @@ def process_employee_import(file, upload_folder):
                     if 'is_manager' in row and row['is_manager']:
                         is_manager_val = str(row['is_manager']).lower()
                         is_manager = is_manager_val in ['yes', 'true', '1', 'y']
+
+                    employment_type = None
+                    if 'employment_type' in df.columns and not pd.isna(row.get('employment_type')):
+                        employment_type = str(row['employment_type']).strip()
                     
                     # Parse birth date if provided
                     birth_date = None
                     if 'birth_date' in row and pd.notna(row['birth_date']):
                         try:
-                            birth_date = datetime.strptime(str(row['birth_date']), '%Y-%m-%d').date()
-                        except ValueError:
-                            # If date format is different, we'll ignore it
+                            birth_date = pd.to_datetime(row['birth_date']).date()
+                        except Exception:
                             pass
                     
-                    # Create new employee
-                    new_employee = Employee(
-                        employee_id=employee_id,
-                        first_name=row['first_name'],
-                        last_name=row['last_name'],
-                        email=row['email'],
-                        phone=row.get('phone', None),
-                        address=row.get('address', None),
-                        department_id=department_id,
-                        job_title=row['job_title'],
-                        manager_id=manager_id,
-                        hire_date=hire_date,
-                        status='Active',
-                        is_manager=is_manager,
-                        level=row.get('level', None),
-                        education_level=row.get('education_level', None),
-                        birth_date=birth_date
-                    )
+                    # Use existing employee if found, otherwise create new
+                    if existing_employee:
+                        employee = existing_employee
+                    else:
+                        employee = Employee(employee_id=employee_id, status='Active')
+
+                    employee.first_name = row['first_name']
+                    employee.last_name = row['last_name']
+                    employee.email = row['email']
+                    employee.phone = row.get('phone', None)
+                    employee.address = row.get('address', None)
+                    employee.department_id = department_id
+                    employee.job_title = row['job_title']
+                    employee.manager_id = manager_id
+                    employee.hire_date = hire_date
+                    employee.is_manager = is_manager
+                    employee.level = row.get('level', None)
+                    employee.education_level = row.get('education_level', None)
+                    employee.birth_date = birth_date
+                    employee.employment_type = employment_type
                     
-                    # Create a corresponding user account for the employee
-                    username = row['email'].split('@')[0]
-                    existing_user = User.query.filter_by(username=username).first()
-                    if existing_user:
-                        count = 1
-                        while User.query.filter_by(username=f"{username}{count}").first():
-                            count += 1
-                        username = f"{username}{count}"
+                    # Create a corresponding user account for new employees
+                    if not existing_employee:
+                        username = row['email'].split('@')[0]
+                        existing_user = User.query.filter_by(username=username).first()
+                        if existing_user:
+                            count = 1
+                            while User.query.filter_by(username=f"{username}{count}").first():
+                                count += 1
+                            username = f"{username}{count}"
 
-                    employee_role = Role.query.filter_by(name='Employee').first()
-                    default_password = f"{employee_id}{row['last_name'][:3].lower()}"
+                        employee_role = Role.query.filter_by(name='Employee').first()
+                        default_password = f"{employee_id}{row['last_name'][:3].lower()}"
 
-                    new_user = User(
-                        username=username,
-                        email=row['email'],
-                        role_id=employee_role.id if employee_role else None
-                    )
-                    new_user.set_password(default_password)
+                        new_user = User(
+                            username=username,
+                            email=row['email'],
+                            role_id=employee_role.id if employee_role else None
+                        )
+                        new_user.set_password(default_password)
 
-                    db.session.add(new_user)
-                    db.session.flush()
+                        db.session.add(new_user)
+                        db.session.flush()
 
-                    new_employee.user_id = new_user.id
-                    db.session.add(new_employee)
+                        employee.user_id = new_user.id
+
+                    db.session.add(employee)
                     db.session.commit()
                     success_count += 1
                     
@@ -212,10 +218,10 @@ def get_import_template(upload_folder, file_format='csv'):
     
     # Template data
     columns = [
-        'first_name', 'last_name', 'email', 'phone', 
-        'address', 'department', 'job_title', 
-        'manager_email', 'hire_date', 'is_manager',
-        'level', 'education_level', 'birth_date'
+        'first_name', 'last_name', 'email', 'phone',
+        'address', 'department', 'job_title',
+        'manager_email', 'manager_employee_id', 'hire_date', 'is_manager',
+        'level', 'education_level', 'birth_date', 'employment_type'
     ]
     
     # Create empty DataFrame with columns
@@ -231,11 +237,13 @@ def get_import_template(upload_folder, file_format='csv'):
         'department': 'IT',
         'job_title': 'Software Developer',
         'manager_email': 'manager@example.com',
+        'manager_employee_id': '',
         'hire_date': '2023-01-15',
         'is_manager': 'No',
         'level': 'Mid-Level',
         'education_level': 'Bachelor\'s Degree',
-        'birth_date': '1990-05-15'
+        'birth_date': '1990-05-15',
+        'employment_type': 'Full-time'
     }
     df = pd.concat([df, pd.DataFrame([example_row])], ignore_index=True)
     
