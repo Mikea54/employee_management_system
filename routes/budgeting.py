@@ -16,7 +16,7 @@ from models import (
     EmployeeCompensation, PayPeriod, Payroll, PayrollEntry, Benefit,
     EmployeeBenefit, Budget, BudgetItem, BudgetCategory, CompensationReport
 )
-from utils.roles import role_required
+from utils.helpers import role_required
 
 # Create blueprint
 budgeting_bp = Blueprint('budgeting', __name__)

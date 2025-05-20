@@ -10,12 +10,11 @@ import app
 from app import db
 from models import Role, Permission, User
 from seed_data import create_seed_data
-from utils import roles as utils_roles
 from utils import helpers as utils_helpers
 
 # Add simple routes for decorator testing
 @app.app.route('/utils-protected')
-@utils_roles.role_required('Admin')
+@utils_helpers.role_required('Admin')
 def utils_protected():
     return 'utils protected'
 
@@ -92,8 +91,7 @@ def test_utils_role_required_redirects_and_allows(client):
     create_user('emp', 'Employee')
     login(client, 'emp', 'password')
     resp = client.get('/utils-protected')
-    assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/')  # dashboard
+    assert resp.status_code == 403
 
     # login as admin
     login(client)
