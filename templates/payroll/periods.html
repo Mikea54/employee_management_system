@@ -40,12 +40,12 @@
                                 <tr {% if period.is_current %}class="table-primary"{% endif %}>
                                     <td>{{ period.id }}</td>
                                     <td>
-                                        {{ period.start_date.strftime('%b %d') }} - {{ period.end_date.strftime('%b %d, %Y') }}
+                                        {{ period.start_date|format_date('%b %d') }} - {{ period.end_date|format_date }}
                                         {% if period.is_current %}
                                             <span class="badge bg-info ms-2">Current</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ period.payment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ period.payment_date|format_date }}</td>
                                     <td>{{ period.total_days }} days</td>
                                     <td>
                                         <span class="badge bg-{{ 'success' if period.status == 'Completed' else 'warning' if period.status == 'Processing' else 'secondary' }}">

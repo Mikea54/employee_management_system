@@ -160,7 +160,7 @@
                                     <td><span class="badge bg-primary">Base Pay</span></td>
                                     <td>${{ "{:,.2f}".format(employee.base_salary) }}</td>
                                     <td>{{ employee.salary_type }}</td>
-                                    <td>{{ employee.start_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ employee.start_date|format_date }}</td>
                                 </tr>
                                 
                                 {% for component in components %}
@@ -173,7 +173,7 @@
                                     </td>
                                     <td>${{ "{:,.2f}".format(component.amount) }}</td>
                                     <td>{{ component.frequency }}</td>
-                                    <td>{{ component.effective_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ component.effective_date|format_date }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -216,7 +216,7 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             <span>Start Date</span>
-                            <span class="fw-bold">{{ employee.start_date.strftime('%b %d, %Y') }}</span>
+                            <span class="fw-bold">{{ employee.start_date|format_date }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             <span>Years of Service</span>
@@ -256,7 +256,7 @@
                             </div>
                             <div class="d-flex justify-content-between small">
                                 <span>Start Date:</span>
-                                <span>{{ emp_benefit.start_date.strftime('%b %d, %Y') }}</span>
+                                <span>{{ emp_benefit.start_date|format_date }}</span>
                             </div>
                         </li>
                         {% endfor %}
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const payslips = [
         {% for payslip in payroll_history %}
         {
-            period: "{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d') }}",
+            period: "{{ payslip.pay_period.start_date|format_date('%b %d') }} - {{ payslip.pay_period.end_date|format_date('%b %d') }}",
             gross: {{ payslip.gross_pay }},
             net: {{ payslip.net_pay }},
             tax: {{ payslip.tax_amount }}

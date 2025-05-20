@@ -49,8 +49,8 @@
                         </div>
                         <div class="col-sm-6 text-md-end">
                             <h5>Pay Period</h5>
-                            <p class="mb-1">{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d, %Y') }}</p>
-                            <p class="mb-1">Payment Date: {{ payslip.pay_period.payment_date.strftime('%b %d, %Y') }}</p>
+                            <p class="mb-1">{{ payslip.pay_period.start_date|format_date('%b %d') }} - {{ payslip.pay_period.end_date|format_date }}</p>
+                            <p class="mb-1">Payment Date: {{ payslip.pay_period.payment_date|format_date }}</p>
                         </div>
                     </div>
                     
@@ -191,7 +191,7 @@
                 </div>
                 <div class="card-footer">
                     <div class="text-center text-muted">
-                        <small>Generated on {{ payslip.created_at.strftime('%b %d, %Y %H:%M') }}</small>
+                        <small>Generated on {{ payslip.created_at|format_date('%b %d, %Y %H:%M') }}</small>
                     </div>
                 </div>
             </div>
