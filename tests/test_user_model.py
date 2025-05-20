@@ -1,9 +1,3 @@
-import os
-
-# Configure in-memory test environment
-os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
-
 from models import User
 
 

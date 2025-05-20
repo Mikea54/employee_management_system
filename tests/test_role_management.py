@@ -1,10 +1,4 @@
-import os
-import sqlalchemy
 import pytest
-
-# Configure in-memory database before importing the app
-os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
 
 import app
 from app import db
@@ -28,33 +22,13 @@ def helpers_protected():
 def helpers_multi():
     return 'helpers multi'
 
-@pytest.fixture()
-def client():
-    app.app.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
-        SQLALCHEMY_ENGINE_OPTIONS={
-            'connect_args': {'check_same_thread': False},
-            'poolclass': sqlalchemy.pool.StaticPool,
-        },
-    )
-    with app.app.app_context():
-        db.engine.dispose()
-        db.drop_all()
-        db.create_all()
-        create_seed_data()
-    with app.app.test_client() as client:
-        yield client
-        with app.app.app_context():
-            db.session.remove()
-            db.drop_all()
 
 def login(client, username='admin', password='admin123'):
     return client.post('/login', data={'username': username, 'password': password}, follow_redirects=True)
 
 
 def create_user(username, role_name):
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.filter_by(name=role_name).first()
         user = User(username=username, email=f'{username}@example.com', role_id=role.id, is_active=True)
         user.set_password('password')
@@ -63,8 +37,8 @@ def create_user(username, role_name):
     return user
 
 
-def test_role_has_permission_and_user_delegates(client):
-    with app.app.app_context():
+def test_role_has_permission_and_user_delegates(app, client, admin_user):
+    with app.app_context():
         perm = Permission(name='test_perm', description='Test Permission')
         db.session.add(perm)
         role = Role(name='Tester', description='testing role')
@@ -81,7 +55,7 @@ def test_role_has_permission_and_user_delegates(client):
         assert not user.has_permission('missing')
 
 
-def test_utils_role_required_redirects_and_allows(client):
+def test_utils_role_required_redirects_and_allows(app, client, admin_user):
     # unauthenticated redirect
     resp = client.get('/utils-protected')
     assert resp.status_code == 302
@@ -100,7 +74,7 @@ def test_utils_role_required_redirects_and_allows(client):
     assert b'utils protected' in resp.data
 
 
-def test_helpers_role_required_behavior(client):
+def test_helpers_role_required_behavior(app, client, admin_user):
     resp = client.get('/helpers-protected')
     assert resp.status_code == 302
     assert '/login' in resp.headers['Location']
@@ -124,7 +98,7 @@ def test_helpers_role_required_behavior(client):
     assert resp.status_code == 403
 
 
-def test_create_role_route(client):
+def test_create_role_route(app, client, admin_user):
     login(client)
     data = {
         'name': 'MyRole',
@@ -132,7 +106,7 @@ def test_create_role_route(client):
         'permissions[]': ['employee_view', 'employee_edit'],
     }
     client.post('/admin/roles/create', data=data)
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.filter_by(name='MyRole').first()
         assert role is not None
         perms = [p.name for p in role.permissions]
@@ -147,9 +121,9 @@ def test_create_role_route(client):
     assert b'Role name is required' in resp.data
 
 
-def test_edit_role_route(client):
+def test_edit_role_route(app, client, admin_user):
     login(client)
-    with app.app.app_context():
+    with app.app_context():
         role = Role(name='TempRole', description='temp')
         db.session.add(role)
         db.session.commit()
@@ -161,14 +135,14 @@ def test_edit_role_route(client):
         'permissions[]': ['employee_view'],
     }
     client.post(f'/admin/roles/edit/{rid}', data=data)
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.get(rid)
         assert role.name == 'UpdatedRole'
         assert role.description == 'updated'
         assert role.permissions.count() == 1
 
     # duplicate name check
-    with app.app.app_context():
+    with app.app_context():
         other = Role(name='OtherRole')
         db.session.add(other)
         db.session.commit()
@@ -177,12 +151,12 @@ def test_edit_role_route(client):
 
 
 
-def test_admin_routes_forbidden_to_non_admin(client):
+def test_admin_routes_forbidden_to_non_admin(app, client, admin_user):
     create_user('emp3', 'Employee')
     login(client, 'emp3', 'password')
     resp = client.post('/admin/roles/create', data={'name': 'X'})
     assert resp.status_code == 403
-    with app.app.app_context():
+    with app.app_context():
         role = Role(name='R1')
         db.session.add(role)
         db.session.commit()
@@ -191,8 +165,8 @@ def test_admin_routes_forbidden_to_non_admin(client):
     assert resp.status_code == 403
 
 
-def test_seed_data_idempotent(client):
-    with app.app.app_context():
+def test_seed_data_idempotent(app, client):
+    with app.app_context():
         role_count = Role.query.count()
         perm_count = Permission.query.count()
         create_seed_data()

@@ -1,34 +1,14 @@
-import os
 import datetime
 from unittest import mock
 import pytest
 
-os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
-
-import app
 from app import db
 from models import Role, User, Employee, PayPeriod, Payroll, PayrollEntry
 
 
 @pytest.fixture
-def client():
-    app.app.config['TESTING'] = True
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-
-    with app.app.app_context():
-        db.drop_all()
-        db.create_all()
-
-        admin_role = Role(name='Admin')
-        db.session.add(admin_role)
-        db.session.commit()
-
-        admin_user = User(username='admin', email='admin@example.com', role_id=admin_role.id, is_active=True)
-        admin_user.set_password('password')
-        db.session.add(admin_user)
-        db.session.commit()
-
+def payroll_record(app, admin_user):
+    with app.app_context():
         employee = Employee(
             employee_id='EMP1',
             first_name='Test',
@@ -68,19 +48,14 @@ def client():
         )
         db.session.add(entry)
         db.session.commit()
+        return payroll.id
 
-    with app.app.test_client() as client:
-        client.post('/login', data={'username': 'admin', 'password': 'password'})
-        yield client, payroll.id
-        with app.app.app_context():
-            db.session.remove()
-            db.drop_all()
-
-def test_download_payslip_returns_pdf(client):
-    client_obj, payroll_id = client
+def test_download_payslip_returns_pdf(app, client, admin_user, payroll_record):
+    client.post('/login', data={'username': 'admin', 'password': 'password'})
+    payroll_id = payroll_record
     dummy_pdf = b'%PDF-1.4 dummy'
     with mock.patch.dict('sys.modules', {'pdfkit': mock.Mock(from_string=mock.Mock(return_value=dummy_pdf))}):
-        resp = client_obj.get(f'/payroll/payslips/{payroll_id}/download')
+        resp = client.get(f'/payroll/payslips/{payroll_id}/download')
     assert resp.status_code == 200
     assert resp.mimetype == 'application/pdf'
     assert resp.data == dummy_pdf

@@ -1,33 +1,13 @@
-import os
 import datetime
 import pytest
 
-os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
-
-import app
 from app import db
 from models import Role, User, Employee, EmployeeCompensation, PayPeriod, Payroll, PayrollEntry
 
 
 @pytest.fixture
-def client():
-    app.app.config['TESTING'] = True
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-
-    with app.app.app_context():
-        db.drop_all()
-        db.create_all()
-
-        admin_role = Role(name='Admin')
-        db.session.add(admin_role)
-        db.session.commit()
-
-        admin_user = User(username='admin', email='admin@example.com', role_id=admin_role.id, is_active=True)
-        admin_user.set_password('password')
-        db.session.add(admin_user)
-        db.session.commit()
-
+def payslip_data(app, admin_user):
+    with app.app_context():
         employee = Employee(
             employee_id='EMP001',
             first_name='Test',
@@ -74,17 +54,12 @@ def client():
         db.session.add_all([e1, e2, e3])
         db.session.commit()
 
-    with app.app.test_client() as client:
-        client.post('/login', data={'username': 'admin', 'password': 'password'})
-        yield client, payroll, (e1, e2, e3)
-
-        with app.app.app_context():
-            db.session.remove()
-            db.drop_all()
+        return payroll, (e1, e2, e3)
 
 
-def test_edit_payslip_updates_amounts(client):
-    client_obj, payroll, entries = client
+def test_edit_payslip_updates_amounts(app, client, admin_user, payslip_data):
+    client.post('/login', data={'username': 'admin', 'password': 'password'})
+    payroll, entries = payslip_data
     e1, e2, e3 = entries
 
     data = {
@@ -93,10 +68,10 @@ def test_edit_payslip_updates_amounts(client):
         f'amount_{e3.id}': '60',
     }
 
-    resp = client_obj.post(f'/payroll/payslips/{payroll.id}/edit', data=data)
+    resp = client.post(f'/payroll/payslips/{payroll.id}/edit', data=data)
     assert resp.status_code in (302, 200)
 
-    with app.app.app_context():
+    with app.app_context():
         updated = Payroll.query.get(payroll.id)
         assert updated.gross_pay == 1200.0
         assert updated.tax_amount == 240.0

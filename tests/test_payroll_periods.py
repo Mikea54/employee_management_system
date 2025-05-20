@@ -1,33 +1,14 @@
-import sqlalchemy
 import pytest
 from datetime import date, timedelta
 
-from app import app, db
-from seed_data import create_seed_data
+from app import db
 from models import PayPeriod
 
-@pytest.fixture()
-def client():
-    app.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
-        SQLALCHEMY_ENGINE_OPTIONS={
-            'connect_args': {'check_same_thread': False},
-            'poolclass': sqlalchemy.pool.StaticPool,
-        },
-    )
-    with app.app_context():
-        db.engine.dispose()
-        db.drop_all()
-        db.create_all()
-        create_seed_data()
-    with app.test_client() as client:
-        yield client
 
 def login(client, username='admin', password='admin123'):
     return client.post('/login', data={'username': username, 'password': password}, follow_redirects=True)
 
-def test_create_next_period(client):
+def test_create_next_period(app, client, admin_user):
     with app.app_context():
         start = date(2024, 1, 1)
         end = start + timedelta(days=13)
@@ -46,7 +27,7 @@ def test_create_next_period(client):
         assert second.start_date == first_end + timedelta(days=1)
         assert second.status == 'Draft'
 
-def test_create_annual_periods(client):
+def test_create_annual_periods(app, client, admin_user):
     login(client)
     client.get('/payroll/create-annual-periods', follow_redirects=True)
     with app.app_context():
