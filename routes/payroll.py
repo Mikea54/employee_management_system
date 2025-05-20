@@ -68,7 +68,7 @@ def index():
 
 @payroll.route('/periods')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def payroll_periods():
     """View all pay periods"""
     periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
@@ -85,7 +85,7 @@ def payroll_periods():
 
 @payroll.route('/periods/create', methods=['GET', 'POST'])
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def create_period():
     """Create a new payroll period"""
     if request.method == 'POST':
@@ -139,7 +139,7 @@ def create_period():
 
 @payroll.route('/periods/<int:period_id>')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def view_period(period_id):
     """View details of a specific payroll period"""
     period = PayPeriod.query.get_or_404(period_id)
@@ -182,7 +182,7 @@ def view_period(period_id):
 
 @payroll.route('/run-payroll')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def run_payroll():
     """Run payroll for the current period"""
     # Get the current period
@@ -200,7 +200,7 @@ def run_payroll():
 
 @payroll.route('/reports')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def payroll_reports():
     """Payroll reports dashboard"""
     # Placeholder for payroll reports page
@@ -210,7 +210,7 @@ def payroll_reports():
 
 @payroll.route('/complete-period/<int:period_id>')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def complete_period(period_id):
     """Mark a payroll period as completed"""
     period = PayPeriod.query.get_or_404(period_id)
@@ -238,7 +238,7 @@ def complete_period(period_id):
 
 @payroll.route('/create-next-period')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def create_next_period():
     """Create the next bi-weekly period based on the most recent period"""
     # Find the most recent period
@@ -274,7 +274,7 @@ def create_next_period():
 
 @payroll.route('/create-annual-periods')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def create_annual_periods():
     """Create all pay periods for the current year"""
     current_year = datetime.now().year
@@ -329,7 +329,7 @@ def create_annual_periods():
 
 @payroll.route('/periods/<int:period_id>/update', methods=['GET', 'POST'])
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def update_period(period_id):
     """Update a payroll period"""
     period = PayPeriod.query.get_or_404(period_id)
@@ -388,7 +388,7 @@ def update_period(period_id):
 
 @payroll.route('/periods/<int:period_id>/process')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def process_period(period_id):
     """Process a payroll period - generate payslips for all employees"""
     period = PayPeriod.query.get_or_404(period_id)
@@ -508,7 +508,7 @@ def process_period(period_id):
 
 @payroll.route('/payslips')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def payslips():
     """View all payslips (admin view)"""
     # Get filter parameters
@@ -629,7 +629,7 @@ def my_compensation():
 
 @payroll.route('/salary-structures')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def salary_structures():
     """View all salary structures"""
     structures = SalaryStructure.query.order_by(SalaryStructure.grade, SalaryStructure.level).all()
@@ -657,7 +657,7 @@ def salary_structures():
 
 @payroll.route('/salary-structures/create', methods=['GET', 'POST'])
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def create_salary_structure():
     """Create a new salary structure"""
     if request.method == 'POST':
@@ -706,7 +706,7 @@ def create_salary_structure():
 
 @payroll.route('/salary-components')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def salary_components():
     """View all salary components"""
     # Get filter parameters
@@ -741,7 +741,7 @@ def salary_components():
 
 @payroll.route('/salary-components/create', methods=['GET', 'POST'])
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def create_salary_component():
     """Create a new salary component"""
     if request.method == 'POST':
@@ -794,7 +794,7 @@ def create_salary_component():
 
 @payroll.route('/compensations')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def compensations():
     """View all employee compensations"""
     # Get filter parameters
@@ -830,7 +830,7 @@ def compensations():
 
 @payroll.route('/compensation-reports')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def compensation_reports():
     """View compensation reports"""
     # Get filter parameters
@@ -904,7 +904,7 @@ def compensation_reports():
 
 @payroll.route('/generate-compensation-report', methods=['GET', 'POST'])
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def generate_compensation_report():
     """Generate a custom compensation report"""
     if request.method == 'POST':
@@ -947,7 +947,7 @@ def generate_compensation_report():
 
 @payroll.route('/compensation-reports/<int:report_id>')
 @login_required
-@role_required(['Admin', 'HR'])
+@role_required('Admin', 'HR')
 def view_compensation_report(report_id):
     """View a specific compensation report"""
     report = CompensationReport.query.get_or_404(report_id)
