@@ -82,14 +82,32 @@ def create_seed_data():
         # Create base permissions
         create_permissions()
         
-        # Create roles
-        admin_role = Role(name="Admin", description="Administrator with full access")
-        hr_role = Role(name="HR", description="Human Resources staff")
-        manager_role = Role(name="Manager", description="Department manager")
-        employee_role = Role(name="Employee", description="Regular employee")
-        
-        db.session.add_all([admin_role, hr_role, manager_role, employee_role])
-        db.session.commit()
+        # Create roles if they don't already exist
+        roles_to_add = []
+
+        admin_role = Role.query.filter_by(name="Admin").first()
+        if not admin_role:
+            admin_role = Role(name="Admin", description="Administrator with full access")
+            roles_to_add.append(admin_role)
+
+        hr_role = Role.query.filter_by(name="HR").first()
+        if not hr_role:
+            hr_role = Role(name="HR", description="Human Resources staff")
+            roles_to_add.append(hr_role)
+
+        manager_role = Role.query.filter_by(name="Manager").first()
+        if not manager_role:
+            manager_role = Role(name="Manager", description="Department manager")
+            roles_to_add.append(manager_role)
+
+        employee_role = Role.query.filter_by(name="Employee").first()
+        if not employee_role:
+            employee_role = Role(name="Employee", description="Regular employee")
+            roles_to_add.append(employee_role)
+
+        if roles_to_add:
+            db.session.add_all(roles_to_add)
+            db.session.commit()
 
         # Assign permissions to roles
         perms = {p.name: p for p in Permission.query.all()}
