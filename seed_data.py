@@ -109,22 +109,29 @@ def create_seed_data():
             db.session.add_all(roles_to_add)
             db.session.commit()
 
-        # Assign permissions to roles
+        # Assign permissions to roles without creating duplicates
         perms = {p.name: p for p in Permission.query.all()}
-        admin_role.permissions.extend(perms.values())
-        hr_role.permissions.extend([p for p in [
+
+        def assign_permissions(role, permissions):
+            for perm in permissions:
+                if perm and not role.permissions.filter_by(id=perm.id).first():
+                    role.permissions.append(perm)
+
+        assign_permissions(admin_role, perms.values())
+        assign_permissions(hr_role, [
             perms.get('employee_view'),
             perms.get('employee_edit'),
             perms.get('attendance_manage'),
             perms.get('leave_approve'),
             perms.get('document_manage'),
             perms.get('user_manage'),
-        ] if p])
-        manager_role.permissions.extend([p for p in [
+        ])
+        assign_permissions(manager_role, [
             perms.get('employee_view'),
             perms.get('attendance_manage'),
             perms.get('leave_approve'),
-        ] if p])
+        ])
+
         db.session.commit()
         
         # Create departments
