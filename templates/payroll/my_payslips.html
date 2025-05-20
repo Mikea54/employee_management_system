@@ -177,7 +177,7 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             <span>Base Salary</span>
-                            <span class="fw-bold">${{ "{:,.2f}".format(employee.base_salary) }} {{ employee.salary_type }}</span>
+                            <span class="fw-bold">{{ employee.base_salary|format_currency }} {{ employee.salary_type|default('') }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             <span>Pay Schedule</span>
