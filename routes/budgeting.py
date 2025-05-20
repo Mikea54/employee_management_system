@@ -13,7 +13,7 @@ import pandas as pd
 from app import db
 from models import (
     User, Employee, Department, SalaryStructure, SalaryComponent,
-    EmployeeCompensation, PayrollPeriod, Payroll, PayrollEntry, Benefit,
+    EmployeeCompensation, PayPeriod, Payroll, PayrollEntry, Benefit,
     EmployeeBenefit, Budget, BudgetItem, BudgetCategory, CompensationReport
 )
 from utils.roles import role_required
@@ -512,11 +512,11 @@ def generate_compensation_reports():
                 ).join(
                     Payroll, PayrollEntry.payroll_id == Payroll.id
                 ).join(
-                    PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id
+                    PayPeriod, Payroll.pay_period_id == PayPeriod.id
                 ).filter(
                     Payroll.employee_id == employee.id,
                     PayrollEntry.component_id.in_(bonus_component_ids),
-                    func.extract('year', PayrollPeriod.payment_date) == year
+                    func.extract('year', PayPeriod.payment_date) == year
                 ).first()
                 
                 total_bonus = bonus_entries.total_bonus if bonus_entries.total_bonus else 0
@@ -530,11 +530,11 @@ def generate_compensation_reports():
                 ).join(
                     Payroll, PayrollEntry.payroll_id == Payroll.id
                 ).join(
-                    PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id
+                    PayPeriod, Payroll.pay_period_id == PayPeriod.id
                 ).filter(
                     Payroll.employee_id == employee.id,
                     PayrollEntry.component_id.in_(allowance_component_ids),
-                    func.extract('year', PayrollPeriod.payment_date) == year
+                    func.extract('year', PayPeriod.payment_date) == year
                 ).first()
                 
                 total_allowances = allowance_entries.total_allowances if allowance_entries.total_allowances else 0
@@ -548,11 +548,11 @@ def generate_compensation_reports():
                 ).join(
                     Payroll, PayrollEntry.payroll_id == Payroll.id
                 ).join(
-                    PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id
+                    PayPeriod, Payroll.pay_period_id == PayPeriod.id
                 ).filter(
                     Payroll.employee_id == employee.id,
                     PayrollEntry.component_id.in_(deduction_component_ids),
-                    func.extract('year', PayrollPeriod.payment_date) == year
+                    func.extract('year', PayPeriod.payment_date) == year
                 ).first()
                 
                 total_deductions = deduction_entries.total_deductions if deduction_entries.total_deductions else 0
