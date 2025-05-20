@@ -224,7 +224,15 @@
                         </ul>
                     </li>
                     {% endif %}
-                    
+
+                    {% if current_user.role.name in ['Admin', 'HR'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.manage_pay_periods') }}">
+                            <i class="fas fa-calendar-alt"></i> Manage Pay Periods
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if current_user.role.name == 'Admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.settings') }}">
