@@ -904,6 +904,53 @@ def create_salary_component():
                           component_types=component_types)
 
 
+@payroll.route('/compensations/create', methods=['GET', 'POST'])
+@login_required
+@role_required('Admin', 'HR')
+def create_compensation():
+    """Assign salary or hourly wage to an employee."""
+    if request.method == 'POST':
+        employee_id = request.form.get('employee_id', type=int)
+        base_salary = request.form.get('base_salary', type=float)
+        salary_type = request.form.get('salary_type') or 'Annual'
+        effective_date = request.form.get('effective_date')
+        end_date = request.form.get('end_date')
+        salary_structure_id = request.form.get('salary_structure_id', type=int)
+
+        if not employee_id or not base_salary or not effective_date:
+            flash('Please fill in all required fields', 'danger')
+            return redirect(url_for('payroll.create_compensation', employee_id=employee_id))
+
+        try:
+            comp = EmployeeCompensation(
+                employee_id=employee_id,
+                base_salary=base_salary,
+                salary_type=salary_type,
+                effective_date=datetime.strptime(effective_date, '%Y-%m-%d').date(),
+                end_date=datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None,
+                salary_structure_id=salary_structure_id,
+            )
+            db.session.add(comp)
+            db.session.commit()
+            flash('Compensation assigned successfully', 'success')
+            return redirect(url_for('employees.view_profile', id=employee_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error assigning compensation: {str(e)}', 'danger')
+            return redirect(url_for('payroll.create_compensation', employee_id=employee_id))
+
+    employee_id = request.args.get('employee_id', type=int)
+    employees = Employee.query.order_by(Employee.first_name, Employee.last_name).all()
+    salary_structures = SalaryStructure.query.order_by(SalaryStructure.name).all()
+
+    return render_template(
+        'payroll/create_compensation.html',
+        employees=employees,
+        salary_structures=salary_structures,
+        selected_employee_id=employee_id,
+    )
+
+
 @payroll.route('/compensations')
 @login_required
 @role_required('Admin', 'HR')
