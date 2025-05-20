@@ -6,17 +6,19 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, User, Employee
+
+
+app = create_app()
 
 
 @pytest.fixture
 def client():
-    app.app.config['TESTING'] = True
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-    with app.app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
 
@@ -62,17 +64,17 @@ def client():
         db.session.add(employee)
         db.session.commit()
 
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         client.post('/login', data={'username': 'admin', 'password': 'password'})
         yield client, employee
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
 def test_create_account_route(client):
     client_obj, employee = client
 
-    with app.app.app_context():
+    with app.app_context():
         original_count = User.query.count()
         assert employee.user_id is None
 
@@ -80,7 +82,7 @@ def test_create_account_route(client):
     resp = client_obj.post(f'/employees/create_account/{employee.id}', follow_redirects=True)
     assert resp.status_code in (200, 302)
 
-    with app.app.app_context():
+    with app.app_context():
         new_count = User.query.count()
         db.session.refresh(employee)
         assert new_count == original_count + 1
@@ -95,5 +97,5 @@ def test_create_account_route(client):
     assert resp.status_code in (200, 302)
     assert 'already has a user account' in resp.get_data(as_text=True)
 
-    with app.app.app_context():
+    with app.app_context():
         assert User.query.count() == new_count

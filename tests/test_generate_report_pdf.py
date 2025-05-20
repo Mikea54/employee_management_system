@@ -6,14 +6,16 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, User, Employee, CompensationReport
 from routes.budgeting import budgeting_bp
 
+app = create_app()
+
+
 @pytest.fixture()
 def client(tmp_path):
-    app.app.config.update(
+    app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         SQLALCHEMY_ENGINE_OPTIONS={
@@ -21,10 +23,10 @@ def client(tmp_path):
             'poolclass': sqlalchemy.pool.StaticPool,
         },
     )
-    with app.app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
-        app.app.register_blueprint(budgeting_bp, url_prefix='/budgeting')
+        app.register_blueprint(budgeting_bp, url_prefix='/budgeting')
 
         role = Role(name='Admin')
         db.session.add(role)
@@ -59,10 +61,10 @@ def client(tmp_path):
         db.session.add(report)
         db.session.commit()
 
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         client.post('/login', data={'username': 'admin', 'password': 'password'})
         yield client, report
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
@@ -73,9 +75,9 @@ def test_generate_report_pdf(client):
     assert resp.status_code == 200
     assert resp.headers['Content-Type'] == 'application/pdf'
 
-    with app.app.app_context():
+    with app.app_context():
         db.session.refresh(report)
         assert report.report_file_path
-        path = os.path.join(app.app.root_path, report.report_file_path.lstrip('/'))
+        path = os.path.join(app.root_path, report.report_file_path.lstrip('/'))
         assert os.path.exists(path)
 
