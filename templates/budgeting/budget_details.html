@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block title %}Budget Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">{{ budget.name }}</h1>
+        <div>
+            <a href="{{ url_for('budgeting.add_budget_item', budget_id=budget.id) }}" class="btn btn-success">
+                <i class="fas fa-plus-circle"></i> Add Item
+            </a>
+            <a href="{{ url_for('budgeting.budgets') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold">Total Budget</h6>
+                    <p class="h5 mb-0">${{ "{:,.2f}".format(budget.total_amount) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold">Used</h6>
+                    <p class="h5 mb-0">${{ "{:,.2f}".format(used_budget) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold">Remaining</h6>
+                    <p class="h5 mb-0">${{ "{:,.2f}".format(remaining_budget) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Budget Items</h6>
+        </div>
+        <div class="card-body">
+            {% if items %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Employee</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.category }}</td>
+                            <td>{{ item.subcategory }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>${{ "{:,.2f}".format(item.amount) }}</td>
+                            <td>{{ item.employee.full_name if item.employee else '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> No items found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if category_totals %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Category Totals</h6>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for cat, amt in category_totals.items() %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ cat.title() }}
+                    <span>${{ "{:,.2f}".format(amt) }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

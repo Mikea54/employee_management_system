@@ -50,6 +50,7 @@ from routes.organization import organization_bp
 from routes.admin import admin_bp
 from routes.timesheets import timesheet_bp
 from routes.payroll import payroll
+from routes.budgeting import budgeting_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
@@ -61,6 +62,7 @@ app.register_blueprint(organization_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(timesheet_bp, url_prefix='/timesheets')
 app.register_blueprint(payroll, url_prefix='/payroll')
+app.register_blueprint(budgeting_bp, url_prefix='/budgeting')
 
 # Create database tables
 with app.app_context():
