@@ -453,31 +453,49 @@ def process_period(period_id):
             db.session.add(base_entry)
             
             # Add any recurring salary components for this employee
-            components = SalaryComponent.query.filter_by(
-                employee_id=employee.id,
-                is_recurring=True,
-                is_active=True
-            ).all()
+            components = []
+
+            compensation = EmployeeCompensation.query.filter(
+                EmployeeCompensation.employee_id == employee.id,
+                or_(
+                    EmployeeCompensation.end_date.is_(None),
+                    EmployeeCompensation.end_date >= datetime.now().date(),
+                ),
+            ).order_by(EmployeeCompensation.effective_date.desc()).first()
+
+            if compensation and compensation.salary_structure_id:
+                components = (
+                    SalaryComponent.query.filter_by(
+                        salary_structure_id=compensation.salary_structure_id,
+                        is_active=True,
+                    ).all()
+                )
             
             total_earnings = new_payslip.gross_pay
             total_deductions = 0
             
             for component in components:
+                entry_type = (
+                    'Deduction'
+                    if component.component_type in ['deduction', 'tax']
+                    else 'Earning'
+                )
+
                 entry = PayrollEntry(
                     payroll_id=new_payslip.id,
                     component_name=component.name,
-                    amount=component.amount,
-                    type=component.type.value,
+                    amount=component.value,
+                    type=entry_type,
                     is_recurring=True,
-                    created_by=current_user.id
+                    created_by=current_user.id,
                 )
-                
+
                 db.session.add(entry)
-                
-                if component.type == ComponentType.EARNING:
-                    total_earnings += component.amount
-                elif component.type == ComponentType.DEDUCTION:
-                    total_deductions += component.amount
+
+                if entry_type == 'Deduction':
+                    total_deductions += component.value
+                else:
+                    total_earnings += component.value
             
             # Simple tax calculation (would be more complex in a real system)
             tax_rate = 0.2  # 20% tax rate
