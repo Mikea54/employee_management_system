@@ -11,39 +11,40 @@ from utils.filters import format_currency, format_date
 class Base(DeclarativeBase):
     pass
 
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Initialize SQLAlchemy
+# Extensions
 db = SQLAlchemy(model_class=Base)
-
-# Initialize Login Manager
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
-login_manager.login_message_category = 'info'
 
 
-def create_app(config: dict | None = None) -> Flask:
-    """Application factory used for tests and production."""
+def create_app(config_object=None):
+    """Application factory."""
     app = Flask(__name__)
     app.secret_key = os.environ.get("SESSION_SECRET")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-    # Load default configuration then apply overrides
-    app.config.from_object('config.Config')
-    if config:
-        app.config.update(config)
+    # Load configuration
+    if config_object:
+        if isinstance(config_object, str):
+            app.config.from_object(config_object)
+        else:
+            app.config.from_object(config_object)
+    else:
+        app.config.from_object('config.Config')
 
-    # Initialize extensions
+    # Init extensions
     db.init_app(app)
     login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message_category = 'info'
 
-    # Register custom Jinja2 filters
+    # Register filters
     app.jinja_env.filters['format_currency'] = format_currency
     app.jinja_env.filters['format_date'] = format_date
 
-    # Import and register blueprints
+    # Register blueprints
     from routes.auth import auth_bp
     from routes.dashboard import dashboard_bp
     from routes.employees import employee_bp
@@ -68,7 +69,6 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(payroll, url_prefix='/payroll')
     app.register_blueprint(budgeting_bp, url_prefix='/budgeting')
 
-    # Create database tables and seed data
     with app.app_context():
         import models
         db.create_all()
@@ -76,11 +76,10 @@ def create_app(config: dict | None = None) -> Flask:
         create_seed_data()
 
         @login_manager.user_loader
-        def load_user(user_id: str):
+        def load_user(user_id):
             return models.User.query.get(int(user_id))
 
     return app
 
-
-# Default application instance for scripts
+# Global application instance for backward compatibility
 app = create_app()

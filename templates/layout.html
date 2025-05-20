@@ -143,6 +143,14 @@
                             <i class="fas fa-money-bill-alt"></i> Payroll
                         </a>
                     </li>
+
+                    {% if current_user.is_authenticated and current_user.role and current_user.role.name in ['Admin', 'HR', 'Finance'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('budgeting.index') }}">
+                            <i class="fas fa-wallet"></i> Budgeting
+                        </a>
+                    </li>
+                    {% endif %}
                     
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('leave.my_requests') }}">

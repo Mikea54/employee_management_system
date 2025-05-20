@@ -5,17 +5,19 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, User, Employee, EmployeeCompensation, PayPeriod, Payroll, PayrollEntry
+
+
+app = create_app()
 
 
 @pytest.fixture
 def client():
-    app.app.config['TESTING'] = True
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-    with app.app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
 
@@ -74,11 +76,11 @@ def client():
         db.session.add_all([e1, e2, e3])
         db.session.commit()
 
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         client.post('/login', data={'username': 'admin', 'password': 'password'})
         yield client, payroll, (e1, e2, e3)
 
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
@@ -96,7 +98,7 @@ def test_edit_payslip_updates_amounts(client):
     resp = client_obj.post(f'/payroll/payslips/{payroll.id}/edit', data=data)
     assert resp.status_code in (302, 200)
 
-    with app.app.app_context():
+    with app.app_context():
         updated = Payroll.query.get(payroll.id)
         assert updated.gross_pay == 1200.0
         assert updated.tax_amount == 240.0

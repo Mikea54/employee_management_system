@@ -1,10 +1,15 @@
+import os
 import sqlalchemy
 import pytest
 from datetime import date, timedelta
 
-from app import app, db
+os.environ['SESSION_SECRET'] = 'testing'
+
+from app import create_app, db
 from seed_data import create_seed_data
 from models import PayPeriod
+
+app = create_app()
 
 @pytest.fixture()
 def client():

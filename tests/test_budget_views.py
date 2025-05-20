@@ -6,14 +6,16 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, User, Department, Budget
+
+
+app = create_app()
 
 
 @pytest.fixture()
 def client():
-    app.app.config.update(
+    app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         SQLALCHEMY_ENGINE_OPTIONS={
@@ -21,7 +23,7 @@ def client():
             'poolclass': sqlalchemy.pool.StaticPool,
         },
     )
-    with app.app.app_context():
+    with app.app_context():
         db.engine.dispose()
         db.drop_all()
         db.create_all()
@@ -34,16 +36,16 @@ def client():
         dept = Department(name='HR', description='HR')
         db.session.add(dept)
         db.session.commit()
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         client.post('/login', data={'username': 'admin', 'password': 'password'})
         yield client
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
 
 def create_budget():
-    with app.app.app_context():
+    with app.app_context():
         user = User.query.filter_by(username='admin').first()
         dept = Department.query.first()
         budget = Budget(year=2025, name='Test Budget', description='desc', department_id=dept.id, total_amount=1000.0, created_by=user.id)
