@@ -93,6 +93,15 @@ python migrate_leave_balance_to_hours.py
 python migrate_theme.py
 ```
 
+### Resetting the Database
+
+Use the `reset_database.py` script to drop all tables and recreate them. This is
+helpful when running tests or starting with a clean state.
+
+```bash
+python reset_database.py --seed
+```
+
 ### 5. Running the Application
 
 #### For Development
