@@ -331,6 +331,20 @@ class PayPeriod(db.Model):
         """Calculate the total working days in this pay period"""
         delta = self.end_date - self.start_date
         return delta.days + 1
+
+    @property
+    def total_gross(self) -> float:
+        """Sum of gross pay from all payrolls in this period."""
+        # self.payrolls is a dynamic relationship returning a Query when
+        # attached to a session. When detached (e.g., in tests), it may be a
+        # simple list. Support both scenarios.
+        payrolls = self.payrolls
+        if hasattr(payrolls, "all"):
+            try:
+                payrolls = payrolls.all()
+            except Exception:
+                payrolls = []
+        return sum(p.gross_pay for p in payrolls) if payrolls else 0.0
     
     def __repr__(self):
         return f'<PayPeriod {self.start_date} to {self.end_date}>'
