@@ -17,4 +17,5 @@ dependencies = [
     "pandas>=2.2.3",
     "sendgrid>=6.12.2",
     "pytest>=8.2.2",
+    "alembic>=1.13.1",
 ]
