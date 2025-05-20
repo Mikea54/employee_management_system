@@ -5,6 +5,7 @@ from models import Employee, PayPeriod, Timesheet, TimeEntry, Attendance, Payrol
 from create_pay_periods import create_initial_pay_periods
 from utils.helpers import role_required
 from utils.pdf_utils import html_to_text, simple_pdf
+from utils.timesheet_service import TimesheetService
 import io
 from datetime import datetime, timedelta, date
 from sqlalchemy.exc import SQLAlchemyError
@@ -515,41 +516,8 @@ def view_timesheet(timesheet_id):
         flash('You do not have permission to view this timesheet.', 'danger')
         return redirect(url_for('timesheets.index'))
     
-    # Find navigation links (previous and next employee)
-    prev_employee = None
-    next_employee = None
-    
-    if current_user.role.name in ['Admin', 'HR']:
-        # For admin/HR, navigate through all employees
-        employees = Employee.query.order_by(Employee.last_name, Employee.first_name).all()
-        employee_ids = [emp.id for emp in employees]
-        
-        if timesheet.employee_id in employee_ids:
-            current_index = employee_ids.index(timesheet.employee_id)
-            
-            if current_index > 0:
-                prev_employee_id = employee_ids[current_index - 1]
-                prev_employee = Employee.query.get(prev_employee_id)
-                
-            if current_index < len(employee_ids) - 1:
-                next_employee_id = employee_ids[current_index + 1]
-                next_employee = Employee.query.get(next_employee_id)
-    
-    elif current_user.employee and current_user.employee.id == timesheet.employee.manager_id:
-        # For managers, navigate through their direct reports
-        direct_reports = Employee.query.filter_by(manager_id=current_user.employee.id).order_by(Employee.last_name, Employee.first_name).all()
-        employee_ids = [emp.id for emp in direct_reports]
-        
-        if timesheet.employee_id in employee_ids:
-            current_index = employee_ids.index(timesheet.employee_id)
-            
-            if current_index > 0:
-                prev_employee_id = employee_ids[current_index - 1]
-                prev_employee = Employee.query.get(prev_employee_id)
-                
-            if current_index < len(employee_ids) - 1:
-                next_employee_id = employee_ids[current_index + 1]
-                next_employee = Employee.query.get(next_employee_id)
+    # Determine navigation links
+    prev_employee, next_employee = TimesheetService.get_navigation(timesheet, current_user)
     
     # If this is a POST request and the user can edit this timesheet, process the edits
     can_edit = (current_user.employee and current_user.employee.id == timesheet.employee_id and 
@@ -557,49 +525,7 @@ def view_timesheet(timesheet_id):
     
     if request.method == 'POST' and can_edit:
         try:
-            # Process each day in the pay period
-            start_date = timesheet.pay_period.start_date
-            end_date = timesheet.pay_period.end_date
-            current_date = start_date
-            
-            while current_date <= end_date:
-                date_str = current_date.strftime('%Y-%m-%d')
-                hours = request.form.get(f'hours_{date_str}', '0')
-                description = request.form.get(f'description_{date_str}', '')
-                
-                # Find or create entry for this date
-                entry = TimeEntry.query.filter_by(
-                    timesheet_id=timesheet.id,
-                    date=current_date
-                ).first()
-                
-                try:
-                    hours_val = float(hours) if hours else 0
-                except ValueError:
-                    hours_val = 0
-                
-                if entry:
-                    # Update existing entry
-                    entry.hours = hours_val
-                    entry.description = description
-                else:
-                    # Create new entry if hours > 0 or description exists
-                    if hours_val > 0 or description:
-                        entry = TimeEntry(
-                            timesheet_id=timesheet.id,
-                            date=current_date,
-                            hours=hours_val,
-                            description=description
-                        )
-                        db.session.add(entry)
-                
-                current_date += timedelta(days=1)
-            
-            # Update total hours
-            timesheet.total_hours = db.session.query(func.sum(TimeEntry.hours))\
-                .filter(TimeEntry.timesheet_id == timesheet.id).scalar() or 0
-            
-            db.session.commit()
+            TimesheetService.update_entries_from_form(timesheet, request.form)
             flash('Timesheet updated successfully.', 'success')
         except Exception as e:
             db.session.rollback()
@@ -791,21 +717,7 @@ def submit_timesheet(timesheet_id):
         return redirect(url_for('timesheets.view_timesheet', timesheet_id=timesheet.id))
     
     try:
-        # Check if there are any time entries
-        entry_count = TimeEntry.query.filter_by(timesheet_id=timesheet.id).count()
-        if entry_count == 0:
-            flash('Cannot submit an empty timesheet. Please add time entries first.', 'warning')
-            return redirect(url_for('timesheets.edit_timesheet', timesheet_id=timesheet.id))
-        
-        # Update timesheet status
-        timesheet.status = 'Submitted'
-        timesheet.submitted_at = datetime.now()
-        
-        # Update total hours
-        timesheet.total_hours = db.session.query(func.sum(TimeEntry.hours))\
-            .filter(TimeEntry.timesheet_id == timesheet.id).scalar() or 0
-        
-        db.session.commit()
+        TimesheetService.submit_timesheet(timesheet)
         flash('Timesheet submitted successfully.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -835,14 +747,7 @@ def approve_timesheet(timesheet_id):
         return redirect(url_for('timesheets.view_timesheet', timesheet_id=timesheet.id))
     
     try:
-        # Update timesheet status
-        timesheet.status = 'Approved'
-        timesheet.approved_by = current_user.id
-        timesheet.approved_at = datetime.now()
-        timesheet.comments = request.form.get('comments', '')
-        
-        # Commit the approval first
-        db.session.commit()
+        TimesheetService.approve_timesheet(timesheet, current_user.id, request.form.get('comments', ''))
         
         # Accrue leave hours based on the approved timesheet hours
         from utils.leave_accrual import accrue_leave_from_timesheet
