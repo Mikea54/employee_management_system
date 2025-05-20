@@ -48,6 +48,12 @@ pip install -r dependencies.txt
 ```
 Note: The dependencies.txt file contains all the required Python packages for this application.
 
+#### Initialize the Database Schema
+Apply the initial Alembic migration to create all tables:
+```bash
+alembic upgrade head
+```
+
 ### 4. Application Configuration
 
 #### Create a .env File
