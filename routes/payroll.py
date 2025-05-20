@@ -120,8 +120,7 @@ def create_period():
             start_date=start_date,
             end_date=end_date,
             payment_date=payment_date,
-            status='Draft',
-            created_by=current_user.id
+            status='Draft'
         )
         
         try:
@@ -260,8 +259,7 @@ def create_next_period():
             start_date=new_start_date,
             end_date=new_end_date,
             payment_date=new_payment_date,
-            status='Draft',
-            created_by=current_user.id
+            status='Draft'
         )
         
         db.session.add(new_period)
@@ -310,8 +308,7 @@ def create_annual_periods():
                 start_date=start_date,
                 end_date=end_date,
                 payment_date=payment_date,
-                status='Draft',
-                created_by=current_user.id
+                status='Draft'
             )
             
             db.session.add(period)
