@@ -27,8 +27,7 @@ from models import (
     EmployeeIncentive,
     IncentiveType,
 )
-from utils.roles import role_required
-from utils.helpers import get_current_employee, format_currency
+from utils.helpers import role_required, get_current_employee, format_currency
 
 payroll = Blueprint('payroll', __name__)
 

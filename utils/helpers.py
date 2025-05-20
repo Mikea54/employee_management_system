@@ -28,32 +28,39 @@ def save_document(file, upload_folder):
     return None
 
 def role_required(*roles):
-    """Decorator to check user role permissions
-    
-    Supports both single roles and lists of roles:
+    """Decorator to check user role permissions.
+
+    Supports both single roles and lists of roles::
+
         @role_required('Admin')
         @role_required('Admin', 'HR')
         @role_required(['Admin', 'HR'])
     """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('auth.login'))
-                
-            # Handle both string roles and list of roles
+                # Preserve destination url if user needs to log in
+                return redirect(url_for('auth.login', next=request.url))
+
+            # Normalize provided roles into a flat list
             allowed_roles = []
             for role in roles:
-                if isinstance(role, list):
+                if isinstance(role, (list, tuple, set)):
                     allowed_roles.extend(role)
                 else:
                     allowed_roles.append(role)
-                    
-            if current_user.role.name not in allowed_roles:
+
+            user_role = getattr(current_user, 'role', None)
+            if user_role is None or user_role.name not in allowed_roles:
                 flash('You do not have permission to access this page.', 'danger')
                 abort(403)
+
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
