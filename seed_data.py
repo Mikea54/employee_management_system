@@ -134,12 +134,26 @@ def create_seed_data():
 
         db.session.commit()
         
-        # Create departments
-        admin_dept = Department(name="Administration", description="Administration and management")
-        hr_dept = Department(name="Human Resources", description="HR department")
-        it_dept = Department(name="Information Technology", description="IT department")
-        
-        db.session.add_all([admin_dept, hr_dept, it_dept])
+        # Create departments if they don't already exist
+        admin_dept = Department.query.filter_by(name="Administration").first()
+        if not admin_dept:
+            admin_dept = Department(
+                name="Administration", description="Administration and management"
+            )
+            db.session.add(admin_dept)
+
+        hr_dept = Department.query.filter_by(name="Human Resources").first()
+        if not hr_dept:
+            hr_dept = Department(name="Human Resources", description="HR department")
+            db.session.add(hr_dept)
+
+        it_dept = Department.query.filter_by(name="Information Technology").first()
+        if not it_dept:
+            it_dept = Department(
+                name="Information Technology", description="IT department"
+            )
+            db.session.add(it_dept)
+
         db.session.commit()
         
         # Create document types
