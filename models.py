@@ -726,9 +726,15 @@ class BudgetItem(db.Model):
 # Compensation Report model
 class CompensationReport(db.Model):
     __tablename__ = 'compensation_reports'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    # Optional metadata for custom reports
+    name = db.Column(db.String(100))
+    report_type = db.Column(db.String(20))  # department or position summary
+    include_benefits = db.Column(db.Boolean, default=False)
+    include_bonuses = db.Column(db.Boolean, default=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     year = db.Column(db.Integer, nullable=False)
     generated_date = db.Column(db.DateTime, default=datetime.utcnow)
     base_salary = db.Column(db.Float, nullable=False)
@@ -741,9 +747,11 @@ class CompensationReport(db.Model):
     is_visible_to_employee = db.Column(db.Boolean, default=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     employee = db.relationship('Employee', backref='compensation_reports')
+    department = db.relationship('Department')
     creator = db.relationship('User')
     
     def __repr__(self):

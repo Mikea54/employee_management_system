@@ -1,6 +1,16 @@
 from datetime import date
 from app import app, db
-from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType, PayPeriod
+from models import (
+    User,
+    Role,
+    Permission,
+    Department,
+    Employee,
+    DocumentType,
+    LeaveType,
+    PayPeriod,
+    CompensationReport,
+)
 from create_pay_periods import create_initial_pay_periods
 
 
@@ -172,6 +182,26 @@ def create_seed_data():
         
         # Link admin user to admin employee
         admin_employee.user_id = admin_user.id
+        db.session.commit()
+
+        # Sample compensation report for demonstration
+        comp_report = CompensationReport(
+            employee_id=admin_employee.id,
+            name="Admin Compensation",
+            report_type="department",
+            include_benefits=True,
+            include_bonuses=True,
+            department_id=admin_dept.id,
+            year=date.today().year,
+            base_salary=0.0,
+            total_bonus=0.0,
+            total_allowances=0.0,
+            total_deductions=0.0,
+            employer_benefit_contributions=0.0,
+            total_compensation=0.0,
+            created_by=admin_user.id,
+        )
+        db.session.add(comp_report)
         db.session.commit()
         
         print("Seed data created successfully!")
