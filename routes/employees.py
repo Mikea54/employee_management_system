@@ -180,13 +180,24 @@ def create_employee():
                 'is_manager': bool(request.form.get('is_manager')),  # Checkbox returns 'on' if checked or None if not
                 'level': request.form.get('level'),
                 'education_level': request.form.get('education_level'),
-                'employment_type': request.form.get('employment_type')
+                'employment_type': request.form.get('employment_type'),
+                'healthcare_enrolled': bool(request.form.get('healthcare_enrolled')),
+                'is_401k_enrolled': bool(request.form.get('is_401k_enrolled')),
+                'cell_phone_stipend': request.form.get('cell_phone_stipend', type=float) or 0.0
             }
             
             # Handle birth_date if provided
             birth_date = request.form.get('birth_date')
             if birth_date:
                 employee_data['birth_date'] = datetime.strptime(birth_date, '%Y-%m-%d').date()
+
+            hc_date = request.form.get('healthcare_enrollment_date')
+            if hc_date:
+                employee_data['healthcare_enrollment_date'] = datetime.strptime(hc_date, '%Y-%m-%d').date()
+
+            k401_date = request.form.get('k401_enrollment_date')
+            if k401_date:
+                employee_data['k401_enrollment_date'] = datetime.strptime(k401_date, '%Y-%m-%d').date()
             
             # Validate required fields
             required_fields = ['employee_id', 'first_name', 'last_name', 'email', 'department_id', 'job_title', 'hire_date']
@@ -288,6 +299,9 @@ def edit_employee(id):
             employee.level = request.form.get('level')
             employee.education_level = request.form.get('education_level')
             employee.employment_type = request.form.get('employment_type')
+            employee.healthcare_enrolled = bool(request.form.get('healthcare_enrolled'))
+            employee.is_401k_enrolled = bool(request.form.get('is_401k_enrolled'))
+            employee.cell_phone_stipend = request.form.get('cell_phone_stipend', type=float) or 0.0
             
             # Handle dates
             new_hire_date = request.form.get('hire_date')
@@ -299,6 +313,18 @@ def edit_employee(id):
                 employee.birth_date = datetime.strptime(birth_date, '%Y-%m-%d').date()
             elif employee.birth_date:  # Clear birth date if field is empty but was previously set
                 employee.birth_date = None
+
+            hc_date = request.form.get('healthcare_enrollment_date')
+            if hc_date:
+                employee.healthcare_enrollment_date = datetime.strptime(hc_date, '%Y-%m-%d').date()
+            elif not request.form.get('healthcare_enrollment_date') and employee.healthcare_enrollment_date:
+                employee.healthcare_enrollment_date = None
+
+            k401_date = request.form.get('k401_enrollment_date')
+            if k401_date:
+                employee.k401_enrollment_date = datetime.strptime(k401_date, '%Y-%m-%d').date()
+            elif not request.form.get('k401_enrollment_date') and employee.k401_enrollment_date:
+                employee.k401_enrollment_date = None
             
             db.session.commit()
             flash('Employee updated successfully!', 'success')
