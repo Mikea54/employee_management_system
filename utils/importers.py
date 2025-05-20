@@ -8,12 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask import flash
 from app import db
 from models import Employee, Department, User, Role
-
-def allowed_file(filename, allowed_extensions=None):
-    """Check if the file extension is allowed."""
-    if allowed_extensions is None:
-        allowed_extensions = {'csv', 'xlsx', 'xls'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+from utils.helpers import allowed_file
 
 def process_employee_import(file, upload_folder):
     """Process employee import from CSV or Excel file.
@@ -25,7 +20,7 @@ def process_employee_import(file, upload_folder):
     Returns:
         tuple: (success_count, error_count, errors)
     """
-    if file and allowed_file(file.filename):
+    if file and allowed_file(file.filename, {'csv', 'xlsx', 'xls'}):
         # Create upload directory if it doesn't exist
         os.makedirs(upload_folder, exist_ok=True)
         

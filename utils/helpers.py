@@ -8,10 +8,24 @@ from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv'}
 
-def allowed_file(filename):
-    """Check if the file extension is allowed"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename, allowed_extensions=None):
+    """Check if the file extension is allowed.
+
+    Args:
+        filename (str): Name of the file to validate.
+        allowed_extensions (set[str] | None): Optional custom allowed
+            extensions. Defaults to ``ALLOWED_EXTENSIONS``.
+
+    Returns:
+        bool: ``True`` if the extension is allowed, otherwise ``False``.
+    """
+    if allowed_extensions is None:
+        allowed_extensions = ALLOWED_EXTENSIONS
+
+    return (
+        '.' in filename
+        and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    )
 
 def save_document(file, upload_folder):
     """Save uploaded document and return secure filename"""
