@@ -56,6 +56,25 @@ def role_required(*roles):
         return decorated_function
     return decorator
 
+
+def permission_required(permission):
+    """Decorator to check if the current user's role has a permission."""
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for('auth.login'))
+
+            if not current_user.has_permission(permission):
+                flash('You do not have permission to access this page.', 'danger')
+                abort(403)
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
+
 def calculate_leave_days(start_date, end_date, include_weekends=False):
     """Calculate the number of leave days between two dates"""
     if start_date > end_date:
