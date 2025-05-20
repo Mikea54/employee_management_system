@@ -1,0 +1,8 @@
+Compensation Report for {{ report.employee.full_name }} ({{ report.year }})
+Base Salary: {{ report.base_salary }}
+Total Bonus: {{ report.total_bonus }}
+Total Allowances: {{ report.total_allowances }}
+Total Deductions: {{ report.total_deductions }}
+Employer Benefit Contributions: {{ report.employer_benefit_contributions }}
+Total Compensation: {{ report.total_compensation }}
+
