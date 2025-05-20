@@ -615,6 +615,7 @@ def generate_compensation_reports():
                     existing_report.total_deductions = total_deductions
                     existing_report.employer_benefit_contributions = benefits_cost
                     existing_report.total_compensation = total_compensation
+                    existing_report.is_visible_to_employee = True
                     existing_report.created_by = current_user.id
                     existing_report.created_at = datetime.utcnow()
                 else:
@@ -628,6 +629,7 @@ def generate_compensation_reports():
                         total_deductions=total_deductions,
                         employer_benefit_contributions=benefits_cost,
                         total_compensation=total_compensation,
+                        is_visible_to_employee=True,
                         created_by=current_user.id
                     )
                     db.session.add(report)

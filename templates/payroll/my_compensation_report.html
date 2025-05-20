@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block title %}My Compensation Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">My Compensation Report ({{ report.year }})</h1>
+        <div>
+            <a href="{{ url_for('payroll.my_compensation') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-chart-pie me-1"></i> Compensation Summary
+            </a>
+            <a href="{{ url_for('payroll.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Payroll Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Report Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Base Salary</th>
+                            <td>{{ report.base_salary|format_currency }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Total Bonus</th>
+                            <td>{{ report.total_bonus|format_currency }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Total Allowances</th>
+                            <td>{{ report.total_allowances|format_currency }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Total Deductions</th>
+                            <td>{{ report.total_deductions|format_currency }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Employer Benefit Contributions</th>
+                            <td>{{ report.employer_benefit_contributions|format_currency }}</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <th scope="row">Total Compensation</th>
+                            <td>{{ report.total_compensation|format_currency }}</td>
+                        </tr>
+                        {% if report.report_file_path %}
+                        <tr>
+                            <th scope="row">Report File</th>
+                            <td>
+                                <a href="{{ report.report_file_path }}" class="btn btn-sm btn-primary" download>
+                                    <i class="fas fa-download me-1"></i> Download PDF
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
