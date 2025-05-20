@@ -67,6 +67,25 @@ def get_total_benefits_cost(employee_id):
     
     return total
 
+def calculate_payroll_expense(department_id=None):
+    """Aggregate salary and benefit costs for the company or a department."""
+    employees_query = Employee.query.filter_by(status='Active')
+    if department_id:
+        employees_query = employees_query.filter_by(department_id=department_id)
+
+    employees = employees_query.all()
+
+    total_salary = 0
+    total_benefits = 0
+
+    for employee in employees:
+        total_salary += get_employee_annual_salary(employee.id)
+        total_benefits += get_total_benefits_cost(employee.id)
+
+    total_expense = total_salary + total_benefits
+
+    return total_salary, total_benefits, total_expense
+
 # Budget Routes
 
 @budgeting_bp.route('/')
@@ -401,6 +420,25 @@ def generate_projection():
         total_benefits=total_benefits,
         total_taxes=total_taxes,
         total_cost=total_cost
+    )
+
+
+@budgeting_bp.route('/company-payroll-expense')
+@login_required
+@role_required('Admin', 'HR', 'Finance')
+def company_payroll_expense():
+    """View rolled up payroll expense for the company or a department."""
+    department_id = request.args.get('department_id', type=int)
+
+    total_salary, total_benefits, total_expense = calculate_payroll_expense(department_id)
+
+    return render_template(
+        'budgeting/company_payroll_expense.html',
+        departments=Department.query.all(),
+        department_id=department_id,
+        total_salary=total_salary,
+        total_benefits=total_benefits,
+        total_expense=total_expense
     )
 
 @budgeting_bp.route('/budget-comparison')
