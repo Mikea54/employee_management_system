@@ -117,6 +117,21 @@ def create_seed_data():
             )
             db.session.add(it_dept)
 
+        # Additional departments
+        extra_departments = [
+            ("Operations", "Operations department"),
+            ("Finance", "Finance department"),
+            ("Sales", "Sales department"),
+            ("Marketing", "Marketing department"),
+            ("Product Development", "Product development department"),
+            ("Supply Chain Management", "Supply chain management department"),
+            ("Warehouse", "Warehouse department"),
+            ("Order Processing", "Order processing department"),
+        ]
+        for name, desc in extra_departments:
+            if not Department.query.filter_by(name=name).first():
+                db.session.add(Department(name=name, description=desc))
+
         db.session.commit()
         
         # Create document types
@@ -179,6 +194,7 @@ def create_document_types():
     add_if_missing("Performance Review", "Employee performance assessments and evaluations")
     add_if_missing("ID Document", "Identification documents and official credentials")
     add_if_missing("Tax Document", "Tax forms and related financial documents")
+    add_if_missing("Resume", "Job application resumes")
 
     if not to_create:
         print("Document types already exist. Skipping.")
@@ -197,9 +213,7 @@ def create_leave_types():
         if name not in existing:
             to_create.append(LeaveType(name=name, description=description, is_paid=is_paid))
 
-    add_if_missing("Annual Leave", "Regular paid vacation leave", True)
-    add_if_missing("Sick Leave", "Leave for illness or medical appointments", True)
-    add_if_missing("Personal Leave", "Leave for personal matters", True)
+    add_if_missing("Paid Time Off", "General paid time off", True)
     add_if_missing("Parental Leave", "Leave for new parents (maternity/paternity)", True)
     add_if_missing("Unpaid Leave", "Leave without pay for extended absences", False)
     add_if_missing("Bereavement Leave", "Leave for family loss or funeral attendance", True)
