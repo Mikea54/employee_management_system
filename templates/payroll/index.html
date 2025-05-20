@@ -34,10 +34,10 @@
                                 <div class="mb-3">
                                     <h5>Period Details</h5>
                                     <div class="mb-2">
-                                        <strong>Dates:</strong> {{ current_period.start_date.strftime('%b %d, %Y') }} - {{ current_period.end_date.strftime('%b %d, %Y') }}
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Payment Date:</strong> {{ current_period.payment_date.strftime('%b %d, %Y') }}
+                                         <strong>Dates:</strong> {{ current_period.start_date|format_date }} - {{ current_period.end_date|format_date }}
+                                      </div>
+                                      <div class="mb-2">
+                                          <strong>Payment Date:</strong> {{ current_period.payment_date|format_date }}
                                     </div>
                                     <div class="mb-2">
                                         <strong>Status:</strong> 
@@ -136,8 +136,8 @@
                             <tbody>
                                 {% for period in upcoming_periods %}
                                 <tr>
-                                    <td>{{ period.start_date.strftime('%b %d') }} - {{ period.end_date.strftime('%b %d, %Y') }}</td>
-                                    <td>{{ period.payment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ period.start_date|format_date('%b %d') }} - {{ period.end_date|format_date }}</td>
+                                    <td>{{ period.payment_date|format_date }}</td>
                                     <td>
                                         <span class="badge bg-{{ 'success' if period.status == 'Completed' else 'warning' if period.status == 'Processing' else 'secondary' }}">
                                             {{ period.status }}
@@ -179,8 +179,8 @@
                             <tbody>
                                 {% for period in past_periods %}
                                 <tr>
-                                    <td>{{ period.start_date.strftime('%b %d') }} - {{ period.end_date.strftime('%b %d, %Y') }}</td>
-                                    <td>{{ period.payment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ period.start_date|format_date('%b %d') }} - {{ period.end_date|format_date }}</td>
+                                    <td>{{ period.payment_date|format_date }}</td>
                                     <td>
                                         <span class="badge bg-{{ 'success' if period.status == 'Completed' else 'warning' if period.status == 'Processing' else 'secondary' }}">
                                             {{ period.status }}
@@ -268,8 +268,8 @@
                         {% for payslip in recent_payslips %}
                         <a href="{{ url_for('payroll.view_payslip', payroll_id=payslip.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="fw-bold">{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d') }}</div>
-                                <div class="text-muted small">{{ payslip.pay_period.payment_date.strftime('%b %d, %Y') }}</div>
+                                <div class="fw-bold">{{ payslip.pay_period.start_date|format_date('%b %d') }} - {{ payslip.pay_period.end_date|format_date('%b %d') }}</div>
+                                <div class="text-muted small">{{ payslip.pay_period.payment_date|format_date }}</div>
                             </div>
                             <div class="text-end">
                                 <div class="fw-bold">{{ payslip.net_pay|format_currency if payslip.net_pay else '$0.00' }}</div>

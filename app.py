@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
-from utils.filters import format_currency
+from utils.filters import format_currency, format_date
 
 
 class Base(DeclarativeBase):
@@ -37,6 +37,7 @@ login_manager.login_message_category = 'info'
 
 # Register custom Jinja2 filters
 app.jinja_env.filters['format_currency'] = format_currency
+app.jinja_env.filters['format_date'] = format_date
 
 # Import and register blueprints
 from routes.auth import auth_bp
