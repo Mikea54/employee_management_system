@@ -3,43 +3,6 @@ from app import app, db
 from models import User, Role, Permission, Department, Employee, DocumentType, LeaveType, PayPeriod
 from create_pay_periods import create_initial_pay_periods
 
-def create_document_types():
-    """Create standard document types"""
-    # Create document types
-    contract_type = DocumentType(
-        name="Employment Contract",
-        description="Official employment contracts and agreements",
-        is_active=True
-    )
-    
-    certification_type = DocumentType(
-        name="Professional Certification",
-        description="Professional qualifications and certifications",
-        is_active=True
-    )
-    
-    review_type = DocumentType(
-        name="Performance Review",
-        description="Employee performance assessments and evaluations",
-        is_active=True
-    )
-    
-    id_type = DocumentType(
-        name="ID Document",
-        description="Identification documents and official credentials",
-        is_active=True
-    )
-    
-    tax_type = DocumentType(
-        name="Tax Document",
-        description="Tax forms and related financial documents",
-        is_active=True
-    )
-    
-    db.session.add_all([contract_type, certification_type, review_type, id_type, tax_type])
-    db.session.commit()
-    print("Document types created successfully.")
-
 
 def create_permissions():
     """Create standard permissions"""
@@ -134,12 +97,26 @@ def create_seed_data():
 
         db.session.commit()
         
-        # Create departments
-        admin_dept = Department(name="Administration", description="Administration and management")
-        hr_dept = Department(name="Human Resources", description="HR department")
-        it_dept = Department(name="Information Technology", description="IT department")
-        
-        db.session.add_all([admin_dept, hr_dept, it_dept])
+        # Create departments if they don't already exist
+        admin_dept = Department.query.filter_by(name="Administration").first()
+        if not admin_dept:
+            admin_dept = Department(
+                name="Administration", description="Administration and management"
+            )
+            db.session.add(admin_dept)
+
+        hr_dept = Department.query.filter_by(name="Human Resources").first()
+        if not hr_dept:
+            hr_dept = Department(name="Human Resources", description="HR department")
+            db.session.add(hr_dept)
+
+        it_dept = Department.query.filter_by(name="Information Technology").first()
+        if not it_dept:
+            it_dept = Department(
+                name="Information Technology", description="IT department"
+            )
+            db.session.add(it_dept)
+
         db.session.commit()
         
         # Create document types
@@ -192,39 +169,26 @@ def create_seed_data():
         print("Password: admin123")
 
 def create_document_types():
-    """Create standard document types"""
-    # Create document types
-    contract_type = DocumentType(
-        name="Employment Contract",
-        description="Official employment contracts and agreements",
-        is_active=True
-    )
-    
-    certification_type = DocumentType(
-        name="Professional Certification",
-        description="Professional qualifications and certifications",
-        is_active=True
-    )
-    
-    review_type = DocumentType(
-        name="Performance Review",
-        description="Employee performance assessments and evaluations",
-        is_active=True
-    )
-    
-    id_type = DocumentType(
-        name="ID Document",
-        description="Identification documents and official credentials",
-        is_active=True
-    )
-    
-    tax_type = DocumentType(
-        name="Tax Document",
-        description="Tax forms and related financial documents",
-        is_active=True
-    )
-    
-    db.session.add_all([contract_type, certification_type, review_type, id_type, tax_type])
+    """Create standard document types if missing."""
+
+    existing = {dt.name for dt in DocumentType.query.all()}
+    to_create = []
+
+    def add_if_missing(name: str, description: str) -> None:
+        if name not in existing:
+            to_create.append(DocumentType(name=name, description=description, is_active=True))
+
+    add_if_missing("Employment Contract", "Official employment contracts and agreements")
+    add_if_missing("Professional Certification", "Professional qualifications and certifications")
+    add_if_missing("Performance Review", "Employee performance assessments and evaluations")
+    add_if_missing("ID Document", "Identification documents and official credentials")
+    add_if_missing("Tax Document", "Tax forms and related financial documents")
+
+    if not to_create:
+        print("Document types already exist. Skipping.")
+        return
+
+    db.session.add_all(to_create)
     db.session.commit()
     print("Document types created successfully.")
 
