@@ -125,10 +125,6 @@ def create_seed_data():
         # Create leave types
         create_leave_types()
 
-        # Create initial pay periods
-        if PayPeriod.query.count() == 0:
-            print("Creating initial pay periods...")
-            create_initial_pay_periods()
         
         # Create admin employee
         admin_employee = Employee(
