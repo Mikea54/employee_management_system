@@ -577,10 +577,20 @@ def my_payslips():
         return redirect(url_for('payroll.index'))
     
     payslips = Payroll.query.filter_by(employee_id=employee.id).order_by(Payroll.created_at.desc()).all()
-    
-    return render_template('payroll/my_payslips.html', 
+
+    current_period = PayPeriod.query.filter(
+        PayPeriod.start_date <= datetime.now(),
+        PayPeriod.end_date >= datetime.now()
+    ).first()
+
+    if not current_period:
+        current_period = PayPeriod.query.filter_by(status='Draft').order_by(PayPeriod.start_date.asc()).first()
+
+    return render_template('payroll/my_payslips.html',
                            employee=employee,
-                           payslips=payslips)
+                           payslips=payslips,
+                           current_period=current_period,
+                           current_date=datetime.now().date())
 
 
 @payroll.route('/my-compensation')
