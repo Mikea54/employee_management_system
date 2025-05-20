@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError
 from flask import flash
 from app import db
-from models import Employee, Department
+from models import Employee, Department, User, Role
 
 def allowed_file(filename, allowed_extensions=None):
     """Check if the file extension is allowed."""
@@ -153,6 +153,29 @@ def process_employee_import(file, upload_folder):
                         birth_date=birth_date
                     )
                     
+                    # Create a corresponding user account for the employee
+                    username = row['email'].split('@')[0]
+                    existing_user = User.query.filter_by(username=username).first()
+                    if existing_user:
+                        count = 1
+                        while User.query.filter_by(username=f"{username}{count}").first():
+                            count += 1
+                        username = f"{username}{count}"
+
+                    employee_role = Role.query.filter_by(name='Employee').first()
+                    default_password = f"{employee_id}{row['last_name'][:3].lower()}"
+
+                    new_user = User(
+                        username=username,
+                        email=row['email'],
+                        role_id=employee_role.id if employee_role else None
+                    )
+                    new_user.set_password(default_password)
+
+                    db.session.add(new_user)
+                    db.session.flush()
+
+                    new_employee.user_id = new_user.id
                     db.session.add(new_employee)
                     db.session.commit()
                     success_count += 1
