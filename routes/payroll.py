@@ -649,6 +649,35 @@ def my_compensation():
                           benefits=benefits)
 
 
+@payroll.route('/my-compensation-report')
+@login_required
+def my_compensation_report():
+    """View generated compensation report for the current employee."""
+    employee = get_current_employee()
+
+    if not employee:
+        flash('No employee profile found for your account', 'warning')
+        return redirect(url_for('payroll.index'))
+
+    year = request.args.get('year', datetime.now().year, type=int)
+
+    report = CompensationReport.query.filter_by(
+        employee_id=employee.id,
+        year=year,
+        is_visible_to_employee=True,
+    ).first()
+
+    if not report:
+        flash('Compensation report not available.', 'warning')
+        return redirect(url_for('payroll.my_compensation'))
+
+    return render_template(
+        'payroll/my_compensation_report.html',
+        employee=employee,
+        report=report,
+    )
+
+
 @payroll.route('/salary-structures')
 @login_required
 @role_required('Admin', 'HR')

@@ -658,6 +658,7 @@ class CompensationReport(db.Model):
     employer_benefit_contributions = db.Column(db.Float, default=0.0)
     total_compensation = db.Column(db.Float, nullable=False)
     report_file_path = db.Column(db.String(255))
+    is_visible_to_employee = db.Column(db.Boolean, default=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
