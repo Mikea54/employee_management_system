@@ -156,7 +156,10 @@
                             <td>{{ employee.department.name if employee.department else 'N/A' }}</td>
                             <td>
                                 {% if employee.hire_date %}
-                                    {% set tenure = ((current_year|int - employee.hire_date.year) * 12 + (current_year|int - employee.hire_date.month)) // 12 %}
+                                    {% set tenure = current_year|int - employee.hire_date.year %}
+                                    {% if tenure < 0 %}
+                                        {% set tenure = 0 %}
+                                    {% endif %}
                                     {{ tenure }}
                                 {% else %}
                                     N/A
