@@ -5,7 +5,6 @@ from functools import wraps
 from flask import abort, request, flash, redirect, url_for
 from flask_login import current_user
 from werkzeug.utils import secure_filename
-from models import Employee
 
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv'}
 
@@ -99,7 +98,8 @@ def get_current_employee():
     """Get the employee record for the current logged-in user"""
     if not current_user.is_authenticated:
         return None
-        
+
+    from models import Employee
     return Employee.query.filter_by(user_id=current_user.id).first()
 
 def format_currency(amount, currency='$'):
