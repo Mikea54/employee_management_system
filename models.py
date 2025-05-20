@@ -552,7 +552,10 @@ class EmployeeCompensation(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    employee = db.relationship('Employee', backref='compensations')
+    employee = db.relationship(
+        'Employee',
+        backref=db.backref('compensations', lazy='dynamic')
+    )
     salary_structure = db.relationship('SalaryStructure')
     
     def __repr__(self):
