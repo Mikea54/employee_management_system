@@ -928,9 +928,38 @@ def compensations():
     # Get departments for filter
     departments = Department.query.order_by(Department.name).all()
     
-    # Calculate totals
-    total_salary = sum(comp.base_pay_annual for _, comp in results)
-    total_compensation = sum(comp.base_pay_annual + (comp.bonus_annual or 0) + comp.total_benefits_annual for _, comp in results)
+    def annual_base(comp):
+        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+
+    def annual_bonus(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(EmployeeIncentive.amount), 0.0))
+            .filter(EmployeeIncentive.employee_id == emp_id)
+            .scalar()
+            or 0.0
+        )
+
+    def annual_benefits(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(Benefit.employer_contribution), 0.0))
+            .join(EmployeeBenefit, EmployeeBenefit.benefit_id == Benefit.id)
+            .filter(
+                EmployeeBenefit.employee_id == emp_id,
+                or_(EmployeeBenefit.end_date.is_(None), EmployeeBenefit.end_date >= datetime.now().date()),
+            )
+            .scalar()
+            or 0.0
+        )
+
+    # Calculate totals using current compensation data
+    total_salary = 0.0
+    total_compensation = 0.0
+    for emp, comp in results:
+        comp.annual_salary = annual_base(comp)
+        comp.total_bonus = annual_bonus(emp.id)
+        comp.total_benefits = annual_benefits(emp.id)
+        total_salary += comp.annual_salary
+        total_compensation += comp.annual_salary + comp.total_bonus + comp.total_benefits
     
     return render_template('payroll/compensations.html', 
                            results=results,
@@ -948,31 +977,65 @@ def compensation_reports():
     # Get filter parameters
     report_type = request.args.get('type', 'department')
     
-    if report_type == 'department':
-        # Department compensation summary
-        results = db.session.query(
-            Department.name.label('category'),
-            func.count(Employee.id).label('employee_count'),
-            func.sum(EmployeeCompensation.base_pay_annual).label('total_base_pay'),
-            func.sum(EmployeeCompensation.bonus_annual).label('total_bonus'),
-            func.sum(EmployeeCompensation.total_benefits_annual).label('total_benefits')
-        ).join(Employee, Department.id == Employee.department_id)\
-         .join(EmployeeCompensation, Employee.id == EmployeeCompensation.employee_id)\
-         .group_by(Department.name)\
-         .order_by(Department.name)\
-         .all()
-    else:
-        # Position compensation summary
-        results = db.session.query(
-            Employee.position.label('category'),
-            func.count(Employee.id).label('employee_count'),
-            func.sum(EmployeeCompensation.base_pay_annual).label('total_base_pay'),
-            func.sum(EmployeeCompensation.bonus_annual).label('total_bonus'),
-            func.sum(EmployeeCompensation.total_benefits_annual).label('total_benefits')
-        ).join(EmployeeCompensation, Employee.id == EmployeeCompensation.employee_id)\
-         .group_by(Employee.position)\
-         .order_by(Employee.position)\
-         .all()
+    employees = db.session.query(Employee, EmployeeCompensation)\
+        .join(EmployeeCompensation, Employee.id == EmployeeCompensation.employee_id)\
+        .filter(
+            or_(
+                EmployeeCompensation.end_date.is_(None),
+                EmployeeCompensation.end_date >= datetime.now().date(),
+            )
+        ).all()
+
+    def annual_base(comp):
+        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+
+    def annual_bonus(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(EmployeeIncentive.amount), 0.0))
+            .filter(EmployeeIncentive.employee_id == emp_id)
+            .scalar()
+            or 0.0
+        )
+
+    def annual_benefits(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(Benefit.employer_contribution), 0.0))
+            .join(EmployeeBenefit, EmployeeBenefit.benefit_id == Benefit.id)
+            .filter(
+                EmployeeBenefit.employee_id == emp_id,
+                or_(EmployeeBenefit.end_date.is_(None), EmployeeBenefit.end_date >= datetime.now().date()),
+            )
+            .scalar()
+            or 0.0
+        )
+
+    aggregates = {}
+    for emp, comp in employees:
+        category = emp.department.name if report_type == 'department' else emp.job_title
+        data = aggregates.setdefault(
+            category,
+            {'employee_count': 0, 'total_base_pay': 0.0, 'total_bonus': 0.0, 'total_benefits': 0.0},
+        )
+        data['employee_count'] += 1
+        data['total_base_pay'] += annual_base(comp)
+        data['total_bonus'] += annual_bonus(emp.id)
+        data['total_benefits'] += annual_benefits(emp.id)
+
+    results = []
+    for category, data in sorted(aggregates.items()):
+        results.append(
+            type(
+                'Row',
+                (object,),
+                {
+                    'category': category,
+                    'employee_count': data['employee_count'],
+                    'total_base_pay': data['total_base_pay'],
+                    'total_bonus': data['total_bonus'],
+                    'total_benefits': data['total_benefits'],
+                },
+            )()
+        )
     
     # Calculate additional metrics for each result
     report_data = []
@@ -1077,29 +1140,54 @@ def view_compensation_report(report_id):
     
     results = query.all()
     
+    def annual_base(comp):
+        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+
+    def annual_bonus(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(EmployeeIncentive.amount), 0.0))
+            .filter(EmployeeIncentive.employee_id == emp_id)
+            .scalar()
+            or 0.0
+        )
+
+    def annual_benefits(emp_id):
+        return (
+            db.session.query(func.coalesce(func.sum(Benefit.employer_contribution), 0.0))
+            .join(EmployeeBenefit, EmployeeBenefit.benefit_id == Benefit.id)
+            .filter(
+                EmployeeBenefit.employee_id == emp_id,
+                or_(EmployeeBenefit.end_date.is_(None), EmployeeBenefit.end_date >= datetime.now().date()),
+            )
+            .scalar()
+            or 0.0
+        )
+
     # Format data for the report
     report_data = []
+    total_base = 0.0
+    total_bonus = 0.0
+    total_benefits = 0.0
+
     for employee, comp in results:
-        total_comp = comp.base_pay_annual
-        
-        if report.include_bonuses:
-            total_comp += comp.bonus_annual or 0
-        
-        if report.include_benefits:
-            total_comp += comp.total_benefits_annual or 0
-        
+        base_pay = annual_base(comp)
+        bonus_pay = annual_bonus(employee.id) if report.include_bonuses else 0.0
+        benefits_pay = annual_benefits(employee.id) if report.include_benefits else 0.0
+
+        total_comp = base_pay + bonus_pay + benefits_pay
+
         report_data.append({
             'employee': employee,
             'compensation': comp,
             'department': employee.department.name,
-            'position': employee.position,
-            'total_compensation': total_comp
+            'position': employee.job_title,
+            'total_compensation': total_comp,
         })
-    
-    # Calculate totals
-    total_base = sum(comp.base_pay_annual for _, comp in results)
-    total_bonus = sum(comp.bonus_annual or 0 for _, comp in results) if report.include_bonuses else 0
-    total_benefits = sum(comp.total_benefits_annual or 0 for _, comp in results) if report.include_benefits else 0
+
+        total_base += base_pay
+        total_bonus += bonus_pay
+        total_benefits += benefits_pay
+
     total_comp = total_base + total_bonus + total_benefits
     
     return render_template('payroll/view_report.html', 
