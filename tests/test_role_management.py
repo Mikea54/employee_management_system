@@ -6,31 +6,32 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, Permission, User
 from seed_data import create_seed_data
 from utils import helpers as utils_helpers
 
 # Add simple routes for decorator testing
-@app.app.route('/utils-protected')
+app = create_app()
+
+@app.route('/utils-protected')
 @utils_helpers.role_required('Admin')
 def utils_protected():
     return 'utils protected'
 
-@app.app.route('/helpers-protected')
+@app.route('/helpers-protected')
 @utils_helpers.role_required('Admin')
 def helpers_protected():
     return 'helpers protected'
 
-@app.app.route('/helpers-multi')
+@app.route('/helpers-multi')
 @utils_helpers.role_required('Admin', 'HR')
 def helpers_multi():
     return 'helpers multi'
 
 @pytest.fixture()
 def client():
-    app.app.config.update(
+    app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         SQLALCHEMY_ENGINE_OPTIONS={
@@ -38,14 +39,14 @@ def client():
             'poolclass': sqlalchemy.pool.StaticPool,
         },
     )
-    with app.app.app_context():
+    with app.app_context():
         db.engine.dispose()
         db.drop_all()
         db.create_all()
         create_seed_data()
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         yield client
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
@@ -54,7 +55,7 @@ def login(client, username='admin', password='admin123'):
 
 
 def create_user(username, role_name):
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.filter_by(name=role_name).first()
         user = User(username=username, email=f'{username}@example.com', role_id=role.id, is_active=True)
         user.set_password('password')
@@ -64,7 +65,7 @@ def create_user(username, role_name):
 
 
 def test_role_has_permission_and_user_delegates(client):
-    with app.app.app_context():
+    with app.app_context():
         perm = Permission(name='test_perm', description='Test Permission')
         db.session.add(perm)
         role = Role(name='Tester', description='testing role')
@@ -132,7 +133,7 @@ def test_create_role_route(client):
         'permissions[]': ['employee_view', 'employee_edit'],
     }
     client.post('/admin/roles/create', data=data)
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.filter_by(name='MyRole').first()
         assert role is not None
         perms = [p.name for p in role.permissions]
@@ -149,7 +150,7 @@ def test_create_role_route(client):
 
 def test_edit_role_route(client):
     login(client)
-    with app.app.app_context():
+    with app.app_context():
         role = Role(name='TempRole', description='temp')
         db.session.add(role)
         db.session.commit()
@@ -161,14 +162,14 @@ def test_edit_role_route(client):
         'permissions[]': ['employee_view'],
     }
     client.post(f'/admin/roles/edit/{rid}', data=data)
-    with app.app.app_context():
+    with app.app_context():
         role = Role.query.get(rid)
         assert role.name == 'UpdatedRole'
         assert role.description == 'updated'
         assert role.permissions.count() == 1
 
     # duplicate name check
-    with app.app.app_context():
+    with app.app_context():
         other = Role(name='OtherRole')
         db.session.add(other)
         db.session.commit()
@@ -182,7 +183,7 @@ def test_admin_routes_forbidden_to_non_admin(client):
     login(client, 'emp3', 'password')
     resp = client.post('/admin/roles/create', data={'name': 'X'})
     assert resp.status_code == 403
-    with app.app.app_context():
+    with app.app_context():
         role = Role(name='R1')
         db.session.add(role)
         db.session.commit()
@@ -192,7 +193,7 @@ def test_admin_routes_forbidden_to_non_admin(client):
 
 
 def test_seed_data_idempotent(client):
-    with app.app.app_context():
+    with app.app_context():
         role_count = Role.query.count()
         perm_count = Permission.query.count()
         create_seed_data()

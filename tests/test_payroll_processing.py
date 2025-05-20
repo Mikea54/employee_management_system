@@ -6,16 +6,18 @@ import pytest
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SESSION_SECRET'] = 'testing'
 
-import app
-from app import db
+from app import create_app, db
 from models import Role, User, Employee, EmployeeCompensation, PayPeriod, Payroll, PayrollEntry
+
+app = create_app()
+
 
 @pytest.fixture
 def client():
-    app.app.config['TESTING'] = True
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-    with app.app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
 
@@ -59,12 +61,12 @@ def client():
         db.session.add(period)
         db.session.commit()
 
-    with app.app.test_client() as client:
+    with app.test_client() as client:
         # Login as admin
         client.post('/login', data={'username': 'admin', 'password': 'password'})
         yield client, employee, period
 
-        with app.app.app_context():
+        with app.app_context():
             db.session.remove()
             db.drop_all()
 
@@ -74,7 +76,7 @@ def test_process_pay_period(client):
     response = client_obj.get(f'/payroll/periods/{period.id}/process')
     assert response.status_code in (302, 200)
 
-    with app.app.app_context():
+    with app.app_context():
         payroll = Payroll.query.filter_by(employee_id=employee.id, pay_period_id=period.id).first()
         assert payroll is not None
         entries = [e.component_name for e in payroll.entries]

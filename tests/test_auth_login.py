@@ -4,9 +4,12 @@ from flask import url_for
 
 # Configure in-memory SQLite before importing app
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+os.environ['SESSION_SECRET'] = 'testing'
 
-from app import app, db
+from app import create_app, db
 from models import User
+
+app = create_app()
 
 
 @pytest.fixture()
