@@ -70,8 +70,10 @@ function calculateLeaveDays() {
     const endDateInput = document.getElementById('endDate');
     const daysElement = document.getElementById('leaveDays');
     const hoursElement = document.getElementById('leaveHours');
-    
-    if (!startDateInput || !endDateInput || !daysElement || !hoursElement) return;
+    const partialWrapper = document.getElementById('partialHoursWrapper');
+    const hoursInput = document.getElementById('hoursInput');
+
+    if (!startDateInput || !endDateInput || !daysElement || !hoursElement || !hoursInput || !partialWrapper) return;
     
     const startDate = new Date(startDateInput.value);
     const endDate = new Date(endDateInput.value);
@@ -92,12 +94,22 @@ function calculateLeaveDays() {
             currentDate.setDate(currentDate.getDate() + 1);
         }
         
-        // Calculate hours (8 hours per day)
-        const hours = days * 8;
-        
+        let hours;
+
+        if (days === 1) {
+            partialWrapper.style.display = 'block';
+            hours = parseFloat(hoursInput.value) || 8;
+            if (hours > 8) hours = 8;
+            hoursInput.value = hours;
+        } else {
+            partialWrapper.style.display = 'none';
+            hours = days * 8;
+            hoursInput.value = hours;
+        }
+
         daysElement.textContent = days;
         hoursElement.textContent = hours;
-        
+
         // Update warning message if selected hours exceed balance
         updateLeaveBalanceWarning(hours);
     }
@@ -175,12 +187,16 @@ function updateLeaveBalanceWarning(requestedHours) {
 function setupDateRangeChangeHandler() {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
-    
+    const hoursInput = document.getElementById('hoursInput');
+
     if (!startDateInput || !endDateInput) return;
-    
+
     // Add change event listeners
     startDateInput.addEventListener('change', calculateLeaveDays);
     endDateInput.addEventListener('change', calculateLeaveDays);
+    if (hoursInput) {
+        hoursInput.addEventListener('input', calculateLeaveDays);
+    }
 }
 
 // Function to validate leave request form before submission
@@ -205,8 +221,8 @@ function validateLeaveRequestForm() {
         
         if (balanceDataElement) {
             const balance = parseFloat(balanceDataElement.getAttribute('data-balance') || '0');
-            const hoursElement = document.getElementById('leaveHours');
-            const requestedHours = parseInt(hoursElement.textContent || '0');
+            const hoursInput = document.getElementById('hoursInput');
+            const requestedHours = parseFloat(hoursInput.value || '0');
             
             if (requestedHours > balance) {
                 const confirm = window.confirm('The requested leave hours exceed your available balance. Do you still want to submit this request?');

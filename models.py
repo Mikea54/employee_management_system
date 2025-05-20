@@ -239,6 +239,7 @@ class LeaveRequest(db.Model):
     leave_type_id = db.Column(db.Integer, db.ForeignKey('leave_types.id'), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
+    hours = db.Column(db.Float, nullable=False, default=0)
     reason = db.Column(db.Text)
     status = db.Column(db.String(20), default='Pending')  # Pending, Approved, Rejected
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
