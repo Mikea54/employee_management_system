@@ -607,7 +607,26 @@ def my_compensation():
     payroll_history = Payroll.query.filter_by(employee_id=employee.id).order_by(Payroll.created_at.desc()).all()
     
     # Get compensation components
-    components = SalaryComponent.query.filter_by(employee_id=employee.id, is_active=True).all()
+    # Determine the employee's active compensation record to load the
+    # associated salary structure components. SalaryComponent no longer has
+    # a direct employee_id column, so we fetch components via the
+    # employee's salary structure if available.
+    components = []
+    compensation = EmployeeCompensation.query.filter(
+        EmployeeCompensation.employee_id == employee.id,
+        or_(
+            EmployeeCompensation.end_date.is_(None),
+            EmployeeCompensation.end_date >= datetime.now().date(),
+        )
+    ).order_by(EmployeeCompensation.effective_date.desc()).first()
+
+    if compensation and compensation.salary_structure_id:
+        components = (
+            SalaryComponent.query.filter_by(
+                salary_structure_id=compensation.salary_structure_id,
+                is_active=True,
+            ).all()
+        )
     
     # Get benefits
     try:
