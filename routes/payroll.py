@@ -73,13 +73,6 @@ def payroll_periods():
     """View all pay periods"""
     periods = PayPeriod.query.order_by(PayPeriod.start_date.desc()).all()
     
-    # Add a property to check if a period is current
-    current_date = datetime.now().date()
-    for period in periods:
-        period.is_current = (period.start_date <= current_date <= period.end_date)
-        # Calculate the total days in the period
-        period.total_days = (period.end_date - period.start_date).days + 1
-    
     return render_template('payroll/periods.html', periods=periods)
 
 

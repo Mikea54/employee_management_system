@@ -18,8 +18,14 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 fw-bold">Pay Period Information</h6>
-            <span class="badge {% if period.is_current %}bg-success{% else %}bg-secondary{% endif %}">
-                {{ 'Current' if period.is_current else 'Past' }} Pay Period
+            <span class="badge {% if period.is_current %}bg-success{% elif period.is_future %}bg-info{% else %}bg-secondary{% endif %}">
+                {% if period.is_current %}
+                    Current Pay Period
+                {% elif period.is_future %}
+                    Future Pay Period
+                {% else %}
+                    Past Pay Period
+                {% endif %}
             </span>
         </div>
         <div class="card-body">

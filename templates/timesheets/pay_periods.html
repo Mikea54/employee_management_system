@@ -17,6 +17,31 @@
     <div class="row">
         <!-- Create Pay Period Card -->
         <div class="col-lg-4 mb-4">
+            <!-- Initialize Pay Periods -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Initialize Pay Periods</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('timesheets.init_pay_periods') }}">
+                        <div class="mb-3">
+                            <label for="initial_start_date" class="form-label">First Start Date</label>
+                            <input type="date" class="form-control" id="initial_start_date" name="initial_start_date" required>
+                        </div>
+                        <div class="d-grid mb-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-calendar-plus"></i> Create Initial Periods
+                            </button>
+                        </div>
+                    </form>
+                    <form method="post" action="{{ url_for('timesheets.delete_all_pay_periods') }}">
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Delete ALL pay periods? This cannot be undone.')">
+                            <i class="fas fa-trash"></i> Delete All Pay Periods
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <div class="card shadow">
                 <div class="card-header py-3">
                     <h6 class="m-0 fw-bold">Create New Pay Period</h6>
@@ -188,6 +213,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (bulkStart) {
             bulkStart.value = formatDateForInput(nextMonday);
         }
+        const initStart = document.getElementById('initial_start_date');
+        if (initStart) {
+            initStart.value = formatDateForInput(nextMonday);
+        }
     }
     
     // Format date for input field (YYYY-MM-DD)
@@ -239,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('start_date').addEventListener('change', function() {
         const startDate = new Date(this.value);
         const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 13); // 14 day period
+        endDate.setDate(startDate.getDate() + 14); // 14 day period
         document.getElementById('end_date').value = formatDateForInput(endDate);
     });
 });
