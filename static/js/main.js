@@ -207,3 +207,27 @@ function exportTableToCSV(tableId, filename = 'data.csv') {
     link.click();
     document.body.removeChild(link);
 }
+
+// Send table HTML to server to generate PDF
+function exportTableToPDF(tableId, filename = 'report.pdf') {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    fetch('/timesheets/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: table.outerHTML })
+    })
+    .then(resp => resp.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    })
+    .catch(() => alert('Failed to export PDF'));
+}
