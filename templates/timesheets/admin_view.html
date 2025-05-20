@@ -190,7 +190,7 @@
                     <select id="employee-filter" class="form-select form-select-sm">
                         <option value="">All Employees</option>
                         {% for employee in employees %}
-                        <option value="{{ employee.id }}">{{ employee.full_name() }}</option>
+                        <option value="{{ employee.id }}">{{ employee.full_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -224,7 +224,7 @@
                         {% for timesheet in recent_timesheets %}
                         <tr data-employee-id="{{ timesheet.employee_id }}">
                             <td>{{ timesheet.id }}</td>
-                            <td>{{ timesheet.employee.full_name() }}</td>
+                            <td>{{ timesheet.employee.full_name }}</td>
                             <td>{{ timesheet.employee.department.name if timesheet.employee.department else 'N/A' }}</td>
                             <td>
                                 <span class="badge 
