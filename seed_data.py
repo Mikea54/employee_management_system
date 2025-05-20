@@ -193,45 +193,26 @@ def create_document_types():
     print("Document types created successfully.")
 
 def create_leave_types():
-    """Create standard leave types"""
-    # Create leave types
-    annual_leave = LeaveType(
-        name="Annual Leave",
-        description="Regular paid vacation leave",
-        is_paid=True
-    )
-    
-    sick_leave = LeaveType(
-        name="Sick Leave",
-        description="Leave for illness or medical appointments",
-        is_paid=True
-    )
-    
-    personal_leave = LeaveType(
-        name="Personal Leave",
-        description="Leave for personal matters",
-        is_paid=True
-    )
-    
-    parental_leave = LeaveType(
-        name="Parental Leave",
-        description="Leave for new parents (maternity/paternity)",
-        is_paid=True
-    )
-    
-    unpaid_leave = LeaveType(
-        name="Unpaid Leave",
-        description="Leave without pay for extended absences",
-        is_paid=False
-    )
-    
-    bereavement_leave = LeaveType(
-        name="Bereavement Leave",
-        description="Leave for family loss or funeral attendance",
-        is_paid=True
-    )
-    
-    db.session.add_all([annual_leave, sick_leave, personal_leave, parental_leave, unpaid_leave, bereavement_leave])
+    """Create standard leave types if missing."""
+    existing = {lt.name for lt in LeaveType.query.all()}
+    to_create = []
+
+    def add_if_missing(name: str, description: str, is_paid: bool) -> None:
+        if name not in existing:
+            to_create.append(LeaveType(name=name, description=description, is_paid=is_paid))
+
+    add_if_missing("Annual Leave", "Regular paid vacation leave", True)
+    add_if_missing("Sick Leave", "Leave for illness or medical appointments", True)
+    add_if_missing("Personal Leave", "Leave for personal matters", True)
+    add_if_missing("Parental Leave", "Leave for new parents (maternity/paternity)", True)
+    add_if_missing("Unpaid Leave", "Leave without pay for extended absences", False)
+    add_if_missing("Bereavement Leave", "Leave for family loss or funeral attendance", True)
+
+    if not to_create:
+        print("Leave types already exist. Skipping.")
+        return
+
+    db.session.add_all(to_create)
     db.session.commit()
     print("Leave types created successfully.")
 
