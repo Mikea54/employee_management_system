@@ -48,8 +48,8 @@
                             <tbody>
                                 {% for payslip in payslips %}
                                 <tr>
-                                    <td>{{ payslip.pay_period.start_date.strftime('%b %d') }} - {{ payslip.pay_period.end_date.strftime('%b %d, %Y') }}</td>
-                                    <td>{{ payslip.pay_period.payment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ payslip.pay_period.start_date|format_date('%b %d') }} - {{ payslip.pay_period.end_date|format_date }}</td>
+                                    <td>{{ payslip.pay_period.payment_date|format_date }}</td>
                                     <td>${{ "{:,.2f}".format(payslip.gross_pay) }}</td>
                                     <td>${{ "{:,.2f}".format(payslip.net_pay) }}</td>
                                     <td>
@@ -203,11 +203,11 @@
                     <div class="alert alert-info">
                         <div class="mb-2">
                             <strong>Period Dates:</strong><br>
-                            {{ current_period.start_date.strftime('%b %d, %Y') }} - {{ current_period.end_date.strftime('%b %d, %Y') }}
+                            {{ current_period.start_date|format_date }} - {{ current_period.end_date|format_date }}
                         </div>
                         <div class="mb-2">
                             <strong>Payment Date:</strong><br>
-                            {{ current_period.payment_date.strftime('%b %d, %Y') }}
+                            {{ current_period.payment_date|format_date }}
                         </div>
                         <div>
                             <strong>Status:</strong><br>
