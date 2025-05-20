@@ -717,7 +717,9 @@ def my_compensation_report():
 @role_required('Admin', 'HR')
 def salary_structures():
     """View all salary structures"""
-    structures = SalaryStructure.query.order_by(SalaryStructure.grade, SalaryStructure.level).all()
+    # Order salary structures alphabetically by name since grade/level fields
+    # are no longer part of the model
+    structures = SalaryStructure.query.order_by(SalaryStructure.name).all()
     
     department_filter = request.args.get('department_id', type=int)
     
@@ -747,33 +749,22 @@ def create_salary_structure():
     """Create a new salary structure"""
     if request.method == 'POST':
         # Get form data
-        grade = request.form.get('grade')
-        level = request.form.get('level')
         name = request.form.get('name')
-        min_salary = float(request.form.get('min_salary', 0))
-        max_salary = float(request.form.get('max_salary', 0))
-        midpoint = float(request.form.get('midpoint', 0))
+        base_salary_min = float(request.form.get('base_salary_min', 0))
+        base_salary_max = float(request.form.get('base_salary_max', 0))
         description = request.form.get('description')
         
         # Validate input
-        if min_salary >= max_salary:
+        if base_salary_min >= base_salary_max:
             flash('Minimum salary must be less than maximum salary', 'danger')
             return redirect(url_for('payroll.create_salary_structure'))
-        
-        # If midpoint not provided, calculate it
-        if not midpoint:
-            midpoint = (min_salary + max_salary) / 2
-        
+
         # Create new structure
         new_structure = SalaryStructure(
-            grade=grade,
-            level=level,
             name=name,
-            min_salary=min_salary,
-            max_salary=max_salary,
-            midpoint=midpoint,
+            base_salary_min=base_salary_min,
+            base_salary_max=base_salary_max,
             description=description,
-            created_by=current_user.id
         )
         
         try:
