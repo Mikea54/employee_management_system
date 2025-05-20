@@ -76,7 +76,7 @@ def payroll_periods():
     # Add a property to check if a period is current
     current_date = datetime.now().date()
     for period in periods:
-        period.is_current = (period.start_date.date() <= current_date <= period.end_date.date())
+        period.is_current = (period.start_date <= current_date <= period.end_date)
         # Calculate the total days in the period
         period.total_days = (period.end_date - period.start_date).days + 1
     
@@ -120,8 +120,7 @@ def create_period():
             start_date=start_date,
             end_date=end_date,
             payment_date=payment_date,
-            status='Draft',
-            created_by=current_user.id
+            status='Draft'
         )
         
         try:
@@ -260,8 +259,7 @@ def create_next_period():
             start_date=new_start_date,
             end_date=new_end_date,
             payment_date=new_payment_date,
-            status='Draft',
-            created_by=current_user.id
+            status='Draft'
         )
         
         db.session.add(new_period)
@@ -310,8 +308,7 @@ def create_annual_periods():
                 start_date=start_date,
                 end_date=end_date,
                 payment_date=payment_date,
-                status='Draft',
-                created_by=current_user.id
+                status='Draft'
             )
             
             db.session.add(period)

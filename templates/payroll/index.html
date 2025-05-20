@@ -69,9 +69,10 @@
                             <div class="col-md-6">
                                 <h5>Timeline</h5>
                                 <div class="progress mb-2" style="height: 10px;">
-                                    {% set today = current_period.start_date.date() %}
-                                    {% set total_days = (current_period.end_date.date() - current_period.start_date.date()).days %}
-                                    {% set days_passed = (today - current_period.start_date.date()).days %}
+                                    {# Use current_date passed from view #}
+                                    {% set today = current_date %}
+                                    {% set total_days = (current_period.end_date - current_period.start_date).days %}
+                                    {% set days_passed = (today - current_period.start_date).days %}
                                     {% set progress = (days_passed / total_days * 100)|int if total_days > 0 else 0 %}
                                     
                                     <div class="progress-bar progress-bar-striped bg-success" role="progressbar" 
