@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Pay Periods{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Manage Pay Periods</h1>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">All Pay Periods</h6>
+            <a href="{{ url_for('payroll.create_period') }}" class="btn btn-sm btn-primary">Create Period</a>
+        </div>
+        <div class="card-body">
+            {% if periods %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Pay Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for period in periods %}
+                        <tr>
+                            <td>{{ period.id }}</td>
+                            <td>{{ period.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ period.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ period.payment_date.strftime('%Y-%m-%d') if period.payment_date }}</td>
+                            <td>{{ period.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No pay periods found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

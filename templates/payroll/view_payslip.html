@@ -17,7 +17,7 @@
                     <i class="fas fa-edit"></i> Edit Payslip
                 </a>
                 
-                <a href="{{ url_for('payroll.view_period', period_id=payslip.payroll_period_id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('payroll.view_period', period_id=payslip.pay_period_id) }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Period
                 </a>
             {% else %}

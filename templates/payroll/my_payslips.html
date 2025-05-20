@@ -219,7 +219,7 @@
                     
                     {% set current_payslip = None %}
                     {% for payslip in payslips %}
-                        {% if payslip.payroll_period_id == current_period.id %}
+                        {% if payslip.pay_period_id == current_period.id %}
                             {% set current_payslip = payslip %}
                         {% endif %}
                     {% endfor %}
