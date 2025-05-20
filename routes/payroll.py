@@ -600,6 +600,42 @@ def view_payslip(payroll_id):
                            deductions=deductions)
 
 
+@payroll.route('/payslips/<int:payroll_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('Admin', 'HR')
+def edit_payslip(payroll_id):
+    """Edit the amounts of payroll entries for a payslip."""
+    payslip = Payroll.query.get_or_404(payroll_id)
+
+    entries = PayrollEntry.query.filter_by(payroll_id=payroll_id).order_by(PayrollEntry.id).all()
+
+    if request.method == 'POST':
+        for entry in entries:
+            field = f'amount_{entry.id}'
+            if field in request.form:
+                try:
+                    entry.amount = float(request.form.get(field, entry.amount))
+                except (TypeError, ValueError):
+                    entry.amount = entry.amount
+
+        # Recalculate payslip totals
+        total_earnings = sum(e.amount for e in entries if e.type == 'Earning')
+        total_deductions = sum(e.amount for e in entries if e.type == 'Deduction')
+        tax_entry = next((e for e in entries if e.component_name == 'Income Tax'), None)
+        tax_amount = tax_entry.amount if tax_entry else 0.0
+
+        payslip.gross_pay = total_earnings
+        payslip.tax_amount = tax_amount
+        payslip.total_deductions = total_deductions - tax_amount
+        payslip.net_pay = total_earnings - total_deductions
+
+        db.session.commit()
+        flash('Payslip updated successfully.', 'success')
+        return redirect(url_for('payroll.view_payslip', payroll_id=payroll_id))
+
+    return render_template('payroll/edit_payslip.html', payslip=payslip, entries=entries)
+
+
 @payroll.route('/my-payslips')
 @login_required
 def my_payslips():
