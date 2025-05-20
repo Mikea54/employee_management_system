@@ -36,6 +36,7 @@ def request_leave():
             start_date_str = request.form.get('start_date')
             end_date_str = request.form.get('end_date')
             reason = request.form.get('reason')
+            hours_requested = request.form.get('hours', type=float)
             
             # Validate required fields
             if not leave_type_id or not start_date_str or not end_date_str:
@@ -57,6 +58,14 @@ def request_leave():
             
             # Calculate days requested
             days_requested = calculate_leave_days(start_date, end_date)
+
+            # Determine hours
+            if days_requested > 1:
+                hours = days_requested * 8
+            else:
+                hours = hours_requested if hours_requested and hours_requested > 0 else 8
+                if hours > 8:
+                    hours = 8
             
             # Check leave balance but allow submission regardless
             leave_balance = LeaveBalance.query.filter_by(
@@ -76,6 +85,7 @@ def request_leave():
                 leave_type_id=leave_type_id,
                 start_date=start_date,
                 end_date=end_date,
+                hours=hours,
                 reason=reason,
                 status='Pending'
             )
@@ -234,15 +244,15 @@ def approve_request(request_id):
         
         # Update leave balance
         days_taken = calculate_leave_days(leave_request.start_date, leave_request.end_date)
-        
+
         leave_balance = LeaveBalance.query.filter_by(
             employee_id=leave_request.employee_id,
             leave_type_id=leave_request.leave_type_id,
             year=datetime.now().year
         ).first()
-        
-        # Convert days to hours (8 hours per day)
-        hours_taken = days_taken * 8
+
+        # Use hours field if provided, otherwise convert days to hours
+        hours_taken = leave_request.hours if leave_request.hours else days_taken * 8
         
         if leave_balance:
             leave_balance.used_hours += hours_taken
