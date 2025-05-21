@@ -3,7 +3,7 @@ import sqlalchemy
 import pytest
 from datetime import date, timedelta
 
-os.environ['SESSION_SECRET'] = 'testing'
+os.environ['SECRET_KEY'] = 'testing'
 
 from app import create_app, db
 from seed_data import create_seed_data

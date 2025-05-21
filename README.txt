@@ -61,7 +61,7 @@ Run this command whenever you pull new updates to apply the latest database migr
 Create a file named `.env` in the root directory:
 ```
 DATABASE_URL=mssql+pyodbc://sa:secure_password@localhost:1433/employee_management?driver=ODBC+Driver+17+for+SQL+Server
-SESSION_SECRET=your_secure_secret_key
+SECRET_KEY=your_secure_secret_key
 MSSQL_HOST=localhost
 MSSQL_PORT=1433
 MSSQL_DATABASE=employee_management
@@ -69,7 +69,7 @@ MSSQL_USER=sa
 MSSQL_PASSWORD=secure_password
 ```
 
-Replace `secure_password` with your actual SQL Server password and generate a random value for `SESSION_SECRET`.
+Replace `secure_password` with your actual SQL Server password and generate a random value for `SECRET_KEY`.
 
 On the first run the application will automatically create all database tables
 and seed initial data such as roles, a default admin account, document types and

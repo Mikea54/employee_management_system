@@ -1,31 +1,34 @@
 import os
-import types
 import sys
+import types
 import pytest
-
-# Ensure tests use in-memory database before the application is imported
-os.environ.setdefault('DATABASE_URL', 'sqlite:///:memory:')
-os.environ.setdefault('SESSION_SECRET', 'testing')
-os.environ.setdefault('SECRET_KEY', 'testing-secret')
-
-sys.modules.setdefault('pandas', types.ModuleType('pandas'))
-
-from app import create_app, db
 import sqlalchemy
 from datetime import date
+
+# Environment variables for test config
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("SESSION_SECRET", "testing")
+os.environ.setdefault("SECRET_KEY", "testing-secret")
+
+# Provide pandas stub if not available
+sys.modules.setdefault(
+    "pandas",
+    types.SimpleNamespace(read_csv=lambda *a, **k: None, read_excel=lambda *a, **k: None),
+)
+
+from app import create_app, db
 from models import Role, User, Employee
 
 @pytest.fixture()
 def app():
-    app = create_app()
-    app.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
-        SQLALCHEMY_ENGINE_OPTIONS={
+    app = create_app({
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SQLALCHEMY_ENGINE_OPTIONS': {
             'connect_args': {'check_same_thread': False},
             'poolclass': sqlalchemy.pool.StaticPool,
         },
-    )
+    })
     yield app
     with app.app_context():
         db.session.remove()
@@ -51,10 +54,8 @@ def admin_user(app):
             db.session.commit()
         return user.id
 
-
 @pytest.fixture()
 def user_without_employee(app):
-    """Create a user who has no associated Employee record."""
     with app.app_context():
         role = Role.query.filter_by(name='Employee').first()
         if not role:
@@ -75,10 +76,8 @@ def user_without_employee(app):
             db.session.commit()
         return user.id
 
-
 @pytest.fixture()
 def user_with_employee(app):
-    """Create a user and an associated Employee record."""
     with app.app_context():
         role = Role.query.filter_by(name='Employee').first()
         if not role:
