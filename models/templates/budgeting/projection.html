@@ -168,9 +168,9 @@
                         <tr class="fw-bold">
                             <td colspan="3">TOTALS</td>
                             <td>${{ "{:,.2f}".format(total_salary) }}</td>
-                            <td>${{ "{:,.2f}".format(total_benefits * 0.3) }}</td>
+                            <td>${{ "{:,.2f}".format(total_retirement) }}</td>
                             <td>${{ "{:,.2f}".format(total_taxes) }}</td>
-                            <td>${{ "{:,.2f}".format(total_benefits * 0.7) }}</td>
+                            <td>${{ "{:,.2f}".format(total_healthcare) }}</td>
                             <td>${{ "{:,.2f}".format(total_cost) }}</td>
                         </tr>
                     </tfoot>
@@ -200,10 +200,10 @@
                         
                         <div class="d-flex justify-content-between align-items-center">
                             <span>Retirement Contributions</span>
-                            <span>{{ "{:.1f}".format(total_benefits * 0.3 / total_cost * 100) }}%</span>
+                            <span>{{ "{:.1f}".format(total_retirement / total_cost * 100) }}%</span>
                         </div>
                         <div class="progress mb-4">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ total_benefits * 0.3 / total_cost * 100 }}%">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ total_retirement / total_cost * 100 }}%">
                             </div>
                         </div>
                         
@@ -218,10 +218,10 @@
                         
                         <div class="d-flex justify-content-between align-items-center">
                             <span>Health & Other Benefits</span>
-                            <span>{{ "{:.1f}".format(total_benefits * 0.7 / total_cost * 100) }}%</span>
+                            <span>{{ "{:.1f}".format(total_healthcare / total_cost * 100) }}%</span>
                         </div>
                         <div class="progress mb-4">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ total_benefits * 0.7 / total_cost * 100 }}%">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ total_healthcare / total_cost * 100 }}%">
                             </div>
                         </div>
                     </div>
@@ -239,11 +239,11 @@
                         <h5><i class="fas fa-info-circle"></i> Projection Details</h5>
                         <p>This projection is based on the following assumptions:</p>
                         <ul>
-                            <li><strong>401(k) Match:</strong> 3% of base salary</li>
+                            <li><strong>401(k) Match:</strong> 4% of base salary (if enrolled)</li>
                             <li><strong>FICA:</strong> 7.65% of salary (6.2% Social Security + 1.45% Medicare)</li>
                             <li><strong>FUTA:</strong> 0.6% on first $7,000 of wages</li>
                             <li><strong>SUTA:</strong> 3.5% of taxable wages (varies by state)</li>
-                            <li><strong>Health Insurance:</strong> Based on current enrollment</li>
+                            <li><strong>Health Insurance:</strong> Placeholder estimate</li>
                             <li><strong>Other Benefits:</strong> Includes life insurance, disability, etc.</li>
                         </ul>
                         <p class="mb-0">

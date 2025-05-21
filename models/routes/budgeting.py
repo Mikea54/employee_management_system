@@ -31,7 +31,7 @@ def get_department_employees(department_id):
     return Employee.query.filter_by(department_id=department_id, status='Active').all()
 
 def get_employee_annual_salary(employee_id):
-    """Get employee's current annual salary"""
+    """Get employee's current annual salary, accounting for hourly wages."""
     compensation = EmployeeCompensation.query.filter(
         EmployeeCompensation.employee_id == employee_id,
         or_(
@@ -39,8 +39,15 @@ def get_employee_annual_salary(employee_id):
             EmployeeCompensation.end_date >= datetime.now().date()
         )
     ).order_by(EmployeeCompensation.effective_date.desc()).first()
-    
-    return compensation.base_salary if compensation else 0
+
+    if not compensation:
+        return 0
+
+    if compensation.salary_type == 'Annual':
+        return compensation.base_salary
+
+    hours = compensation.hours_per_week or 40.0
+    return compensation.base_salary * hours * 52
 
 def get_total_benefits_cost(employee_id):
     """Get total annual benefits cost for an employee"""
@@ -416,7 +423,8 @@ def generate_projection():
     # Generate projection data
     projection_data = []
     total_salary = 0
-    total_benefits = 0
+    total_retirement = 0
+    total_healthcare = 0
     total_taxes = 0
     total_cost = 0
     
@@ -424,8 +432,8 @@ def generate_projection():
         # Get base salary
         base_salary = get_employee_annual_salary(employee.id)
         
-        # Calculate 401K contributions (assumes 3% match)
-        retirement_contribution = base_salary * 0.03
+        # Calculate 401K contributions (assumes 4% match if enrolled)
+        retirement_contribution = base_salary * 0.04 if employee.is_401k_enrolled else 0
         
         # Calculate payroll taxes (simplified: 7.65% FICA, 0.6% FUTA, 3.5% SUTA)
         fica = base_salary * 0.0765
@@ -433,11 +441,11 @@ def generate_projection():
         suta = base_salary * 0.035  # Varies by state, using example rate
         total_tax = fica + futa + suta
         
-        # Get benefits cost
-        benefits_cost = get_total_benefits_cost(employee.id)
+        # Placeholder for healthcare/benefits cost
+        healthcare_cost = 0
         
         # Calculate total
-        total = base_salary + retirement_contribution + total_tax + benefits_cost
+        total = base_salary + retirement_contribution + total_tax + healthcare_cost
         
         # Add to projection
         projection_data.append({
@@ -445,15 +453,18 @@ def generate_projection():
             'base_salary': base_salary,
             'retirement': retirement_contribution,
             'taxes': total_tax,
-            'benefits': benefits_cost,
+            'benefits': healthcare_cost,
             'total': total
         })
         
         # Update totals
         total_salary += base_salary
-        total_benefits += (benefits_cost + retirement_contribution)
+        total_retirement += retirement_contribution
+        total_healthcare += healthcare_cost
         total_taxes += total_tax
         total_cost += total
+
+    total_benefits = total_retirement + total_healthcare
     
     return render_template(
         'budgeting/projection.html',
@@ -462,6 +473,8 @@ def generate_projection():
         department_id=department_id,
         departments=Department.query.all(),
         total_salary=total_salary,
+        total_retirement=total_retirement,
+        total_healthcare=total_healthcare,
         total_benefits=total_benefits,
         total_taxes=total_taxes,
         total_cost=total_cost

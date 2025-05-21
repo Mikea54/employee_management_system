@@ -94,6 +94,23 @@ class Employee(db.Model):
         return getattr(compensation, 'salary_type', 'Annual') if compensation else ''
 
     @property
+    def hours_per_week(self) -> float:
+        compensation = self.current_compensation
+        if compensation and compensation.hours_per_week:
+            return compensation.hours_per_week
+        return 40.0
+
+    @property
+    def annual_base_salary(self) -> float:
+        comp = self.current_compensation
+        if not comp:
+            return 0.0
+        if comp.salary_type == 'Annual':
+            return comp.base_salary
+        hours = comp.hours_per_week or 40.0
+        return comp.base_salary * hours * 52
+
+    @property
     def years_of_service(self) -> int:
         if not self.hire_date:
             return 0

@@ -913,6 +913,7 @@ def create_compensation():
         employee_id = request.form.get('employee_id', type=int)
         base_salary = request.form.get('base_salary', type=float)
         salary_type = request.form.get('salary_type') or 'Annual'
+        hours_per_week = request.form.get('hours_per_week', type=float)
         effective_date = request.form.get('effective_date')
         end_date = request.form.get('end_date')
         salary_structure_id = request.form.get('salary_structure_id', type=int)
@@ -926,6 +927,7 @@ def create_compensation():
                 employee_id=employee_id,
                 base_salary=base_salary,
                 salary_type=salary_type,
+                hours_per_week=hours_per_week,
                 effective_date=datetime.strptime(effective_date, '%Y-%m-%d').date(),
                 end_date=datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None,
                 salary_structure_id=salary_structure_id,
@@ -976,7 +978,10 @@ def compensations():
     departments = Department.query.order_by(Department.name).all()
     
     def annual_base(comp):
-        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+        if comp.salary_type == 'Annual':
+            return comp.base_salary
+        hours = comp.hours_per_week or 40.0
+        return comp.base_salary * hours * 52
 
     def annual_bonus(emp_id):
         return (
@@ -1034,7 +1039,10 @@ def compensation_reports():
         ).all()
 
     def annual_base(comp):
-        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+        if comp.salary_type == 'Annual':
+            return comp.base_salary
+        hours = comp.hours_per_week or 40.0
+        return comp.base_salary * hours * 52
 
     def annual_bonus(emp_id):
         return (
@@ -1188,7 +1196,10 @@ def view_compensation_report(report_id):
     results = query.all()
     
     def annual_base(comp):
-        return comp.base_salary if comp.salary_type == 'Annual' else comp.base_salary * 2080
+        if comp.salary_type == 'Annual':
+            return comp.base_salary
+        hours = comp.hours_per_week or 40.0
+        return comp.base_salary * hours * 52
 
     def annual_bonus(emp_id):
         return (
