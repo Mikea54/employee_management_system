@@ -38,7 +38,7 @@
                                     <hr>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Base Salary</span>
-                                        <span class="fw-bold">${{ "{:,.2f}".format(employee.base_salary if employee.salary_type == 'Annual' else employee.base_salary * 2080) }}</span>
+                                        <span class="fw-bold">${{ "{:,.2f}".format(employee.annual_base_salary) }}</span>
                                     </div>
                                     
                                     {% set total_bonuses = 0 %}
@@ -75,7 +75,7 @@
                                     
                                     <hr>
                                     
-                                    {% set total_compensation = employee.base_salary if employee.salary_type == 'Annual' else employee.base_salary * 2080 %}
+                                    {% set total_compensation = employee.annual_base_salary %}
                                     {% set total_compensation = total_compensation + total_bonuses + total_allowances + total_benefits %}
                                     
                                     <div class="d-flex justify-content-between">
@@ -93,7 +93,7 @@
                                     <h5 class="fw-bold text-primary">Bi-Weekly Pay</h5>
                                     <hr>
                                     
-                                    {% set biweekly_base = employee.base_salary / 26 if employee.salary_type == 'Annual' else employee.base_salary * 80 %}
+                                    {% set biweekly_base = employee.annual_base_salary / 26 %}
                                     
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Base Pay</span>

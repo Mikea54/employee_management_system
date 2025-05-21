@@ -60,6 +60,7 @@ class EmployeeCompensation(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     base_salary = db.Column(db.Float, nullable=False)
     salary_type = db.Column(db.String(20), default='Annual')
+    hours_per_week = db.Column(db.Float, default=40.0)
     effective_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date)
     salary_structure_id = db.Column(db.Integer, db.ForeignKey('salary_structures.id'))
