@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Budget Item{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Add Item to {{ budget.name }}</h1>
+        <a href="{{ url_for('budgeting.budget_details', budget_id=budget.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Item Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('budgeting.add_budget_item', budget_id=budget.id) }}">
+                <div class="mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select name="category" id="category" class="form-select" required>
+                        {% for value, label in categories %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="subcategory" class="form-label">Subcategory</label>
+                    <input type="text" name="subcategory" id="subcategory" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea name="description" id="description" rows="2" class="form-control"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" step="0.01" name="amount" id="amount" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="employee_id" class="form-label">Employee</label>
+                    <select name="employee_id" id="employee_id" class="form-select">
+                        <option value="">-- None --</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">{{ emp.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('budgeting.budget_details', budget_id=budget.id) }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

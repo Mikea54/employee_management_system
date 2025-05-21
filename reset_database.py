@@ -17,7 +17,7 @@ def reset_database(seed: bool = False) -> None:
         db.create_all()
         if seed:
             from seed_data import create_seed_data
-            create_seed_data()
+            create_seed_data(app)
         db.session.commit()
         print("Database reset complete." + (" Seed data loaded." if seed else ""))
 

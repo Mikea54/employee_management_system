@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+
+{% block title %}Upload Document - Employee Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Upload Document</h1>
+        <div>
+            <a href="{{ url_for('documents.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Repository
+            </a>
+        </div>
+    </div>
+
+    <!-- Upload Form Card -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Document Upload Form</h6>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('documents.upload_document') }}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        <!-- Document Information -->
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> Please fill in the document details and select a file to upload.
+                            </div>
+                            
+                            <!-- Employee -->
+                            <div class="mb-3">
+                                <label for="employee_id" class="form-label form-required">Employee</label>
+                                <select class="form-select" id="employee_id" name="employee_id" required>
+                                    <option value="" selected disabled>Select Employee</option>
+                                    {% for employee in employees %}
+                                    <option value="{{ employee.id }}">{{ employee.full_name }} ({{ employee.employee_id }})</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">Please select an employee.</div>
+                            </div>
+                            
+                            <!-- Document Title -->
+                            <div class="mb-3">
+                                <label for="title" class="form-label form-required">Document Title</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                                <div class="invalid-feedback">Please provide a document title.</div>
+                            </div>
+                            
+                            <!-- Document Type -->
+                            <div class="mb-3">
+                                <label for="document_type" class="form-label form-required">Document Type</label>
+                                <select class="form-select" id="document_type" name="document_type" required>
+                                    <option value="" selected disabled>Select Document Type</option>
+                                    
+                                    {% if custom_types %}
+                                    <optgroup label="Custom Document Types">
+                                        {% for type in custom_types %}
+                                        <option value="{{ type.name }}" data-type-id="{{ type.id }}">{{ type.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endif %}
+                                    
+                                    <optgroup label="Standard Types">
+                                        {% for type in predefined_types %}
+                                        <option value="{{ type }}">{{ type }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    
+                                    {% if document_types %}
+                                    <optgroup label="Legacy Types">
+                                        {% for type in document_types %}
+                                            {% if type and type not in predefined_types %}
+                                            <option value="{{ type }}">{{ type }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endif %}
+                                </select>
+                                <div class="invalid-feedback">Please select a document type.</div>
+                                <small class="form-text text-muted">
+                                    <a href="{{ url_for('documents.document_types') }}" target="_blank">
+                                        <i class="fas fa-plus-circle"></i> Manage document types
+                                    </a>
+                                </small>
+                            </div>
+                            
+                            <!-- Custom Document Type (shown if "Other" is selected) -->
+                            <div class="mb-3" id="customTypeContainer" style="display: none;">
+                                <label for="custom_type" class="form-label">Specify Document Type</label>
+                                <input type="text" class="form-control" id="custom_type" name="custom_type">
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            
+                            <!-- File Upload -->
+                            <div class="mb-3">
+                                <label for="document" class="form-label form-required">File</label>
+                                <input type="file" class="form-control" id="document" name="document" required>
+                                <div class="invalid-feedback">Please select a file.</div>
+                                <small class="form-text text-muted">Allowed file types: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV. Maximum size: 16MB.</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i> Upload Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Guidelines -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Upload Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">Document Types and Usage:</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Document Type</th>
+                                    <th>Description</th>
+                                    <th>Typical Files</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Contract</td>
+                                    <td>Employment contracts and agreements</td>
+                                    <td>PDF, DOC</td>
+                                </tr>
+                                <tr>
+                                    <td>Certification</td>
+                                    <td>Professional certifications and qualifications</td>
+                                    <td>PDF</td>
+                                </tr>
+                                <tr>
+                                    <td>Performance Review</td>
+                                    <td>Performance assessments and evaluations</td>
+                                    <td>PDF, DOC, XLSX</td>
+                                </tr>
+                                <tr>
+                                    <td>ID Document</td>
+                                    <td>Identification documents, passports, etc.</td>
+                                    <td>PDF</td>
+                                </tr>
+                                <tr>
+                                    <td>Other</td>
+                                    <td>Miscellaneous employee-related documents</td>
+                                    <td>Any supported format</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show/hide custom document type field based on selection
+    document.getElementById('document_type').addEventListener('change', function() {
+        const customTypeContainer = document.getElementById('customTypeContainer');
+        const customTypeField = document.getElementById('custom_type');
+        
+        if (this.value === 'Other') {
+            customTypeContainer.style.display = 'block';
+            customTypeField.setAttribute('required', 'required');
+        } else {
+            customTypeContainer.style.display = 'none';
+            customTypeField.removeAttribute('required');
+            customTypeField.value = '';
+        }
+    });
+    
+    // Handle form submission to use custom type if specified
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const documentTypeSelect = document.getElementById('document_type');
+        const customTypeField = document.getElementById('custom_type');
+        
+        if (documentTypeSelect.value === 'Other' && customTypeField.value.trim()) {
+            // Create a hidden input with the custom value
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'document_type';
+            hiddenInput.value = customTypeField.value.trim();
+            
+            // Replace the original select's name so it doesn't get submitted
+            documentTypeSelect.name = 'document_type_original';
+            
+            // Add the hidden input to the form
+            this.appendChild(hiddenInput);
+        }
+    });
+</script>
+{% endblock %}

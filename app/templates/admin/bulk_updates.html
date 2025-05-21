@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+
+{% block title %}Bulk Employee Updates - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Bulk Employee Updates</h1>
+        <div>
+            <a href="{{ url_for('admin.department_settings') }}" class="btn btn-secondary">
+                <i class="fas fa-cog"></i> Department Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Bulk Update Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Update Multiple Employees via CSV/Excel Upload</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+                        <p>Upload a CSV or Excel file with the following columns:</p>
+                        <ul>
+                            <li><strong>employee_id</strong> (required): The ID of the employee to update</li>
+                            <li><strong>department_id</strong> or <strong>department_name</strong>: Department to assign</li>
+                            <li><strong>manager_id</strong> or <strong>manager_employee_id</strong>: Manager to assign</li>
+                            <li><strong>is_manager</strong>: Set as manager (Yes/No)</li>
+                        </ul>
+                        <p>You can download a template file below to get started:</p>
+                        <div class="mt-2">
+                            <a href="{{ url_for('admin.bulk_update_template', format='xlsx') }}" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-file-excel"></i> Excel Template
+                            </a>
+                            <a href="{{ url_for('admin.bulk_update_template', format='csv') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-file-csv"></i> CSV Template
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <form action="{{ url_for('admin.process_bulk_updates') }}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="upload_file" class="form-label">Select CSV or Excel file</label>
+                            <input type="file" class="form-control" id="upload_file" name="upload_file" required 
+                                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                            <div class="form-text">Supported formats: .csv, .xlsx, .xls</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload and Process
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Information -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Available Departments</h6>
+        </div>
+        <div class="card-body">
+            {% if departments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Employees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in departments %}
+                        <tr>
+                            <td>{{ dept.id }}</td>
+                            <td>{{ dept.name }}</td>
+                            <td>{{ dept.description }}</td>
+                            <td>{{ dept.employees.count() }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center my-5">No departments found. <a href="{{ url_for('admin.department_settings') }}">Create departments</a> first.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

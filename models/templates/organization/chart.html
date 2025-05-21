@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block title %}Organization Chart - Employee Management System{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .org-chart {
+        font-family: var(--bs-font-sans-serif);
+        width: 100%;
+        overflow: auto;
+    }
+    
+    .org-controls {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: rgba(40, 44, 52, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+    }
+    
+    .org-node {
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s;
+    }
+    
+    .org-node:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .org-card {
+        min-width: 220px;
+        border: none;
+    }
+    
+    .org-children {
+        position: relative;
+        margin-top: 20px;
+    }
+    
+    .org-children::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        border-left: 2px solid var(--bs-primary);
+        height: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Organization Chart</h1>
+        <div>
+            <button class="btn btn-secondary" onclick="exportOrgChart('png')">
+                <i class="fas fa-download"></i> Export Chart
+            </button>
+        </div>
+    </div>
+
+    <!-- Department Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Filter</h6>
+        </div>
+        <div class="card-body">
+            <form id="departmentFilterForm" method="get" action="{{ url_for('organization.index') }}" class="row g-3">
+                <!-- Department Filter -->
+                <div class="col-md-6">
+                    <label for="departmentFilter" class="form-label">Department</label>
+                    <select class="form-select" id="departmentFilter" name="department_id">
+                        <option value="">All Departments</option>
+                        {% for department in departments %}
+                        <option value="{{ department.id }}" {% if request.args.get('department_id')|int == department.id %}selected{% endif %}>
+                            {{ department.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Organization Chart Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">Organizational Structure</h6>
+            <div class="org-controls btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="zoomOrgChart('in')">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button class="btn btn-outline-secondary" onclick="zoomOrgChart('out')">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button class="btn btn-outline-secondary" onclick="zoomOrgChart('reset')">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="orgChartContainer" class="org-chart"></div>
+        </div>
+    </div>
+
+    <!-- Department Statistics Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Department Statistics</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Department Composition</h5>
+                            <canvas id="departmentChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <img src="https://pixabay.com/get/g2269f0ea177113eafebe8d1f303da769425a6be3d9c747956d86f431184cd3f8b20d49f147b49823581610fecd9fcd18f7a7476d565f8022704e2aa39e932fd1_1280.jpg" class="img-fluid rounded mb-3" alt="Organizational Chart Concept" style="max-height: 250px;">
+                            <h5>Organization Insights</h5>
+                            <p class="text-muted">
+                                The organizational structure shows reporting relationships and hierarchical structure of the company.
+                                Use the filters above to explore different departments.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orgchart.js') }}"></script>
+<script>
+    // Initialize department chart
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch department data
+        fetch('/organization/employee-count-by-department')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('departmentChart').getContext('2d');
+                
+                // Extract data for chart
+                const labels = data.map(item => item.department);
+                const counts = data.map(item => item.count);
+                
+                // Create chart
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Number of Employees',
+                            data: counts,
+                            backgroundColor: [
+                                'rgba(78, 115, 223, 0.7)',
+                                'rgba(28, 200, 138, 0.7)',
+                                'rgba(54, 185, 204, 0.7)',
+                                'rgba(246, 194, 62, 0.7)',
+                                'rgba(231, 74, 59, 0.7)',
+                                'rgba(90, 92, 105, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(78, 115, 223, 1)',
+                                'rgba(28, 200, 138, 1)',
+                                'rgba(54, 185, 204, 1)',
+                                'rgba(246, 194, 62, 1)',
+                                'rgba(231, 74, 59, 1)',
+                                'rgba(90, 92, 105, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Employees'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Department'
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading department data:', error));
+    });
+</script>
+{% endblock %}

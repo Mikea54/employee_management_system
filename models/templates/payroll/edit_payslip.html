@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Payslip{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">Edit Payslip</h1>
+    <form method="post">
+        <div class="table-responsive mb-3">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.component_name }}</td>
+                        <td>{{ entry.type }}</td>
+                        <td class="text-end" style="max-width:150px;">
+                            <input type="number" step="0.01" name="amount_{{ entry.id }}" class="form-control text-end" value="{{ entry.amount }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('payroll.view_payslip', payroll_id=payslip.id) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

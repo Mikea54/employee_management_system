@@ -20,7 +20,7 @@ load_dotenv()
 def create_app(config_object=None):
     """Application factory."""
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SESSION_SECRET")
+    app.secret_key = os.environ.get("SECRET_KEY")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     # Load configuration
@@ -71,7 +71,7 @@ def create_app(config_object=None):
         import models
         db.create_all()
         from seed_data import create_seed_data
-        create_seed_data()
+        create_seed_data(app)
 
         @login_manager.user_loader
         def load_user(user_id):

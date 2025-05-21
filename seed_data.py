@@ -1,5 +1,5 @@
 from datetime import date
-from app import app, db
+from app.extensions import db
 from models import (
     User,
     Role,
@@ -32,7 +32,7 @@ def create_permissions():
     db.session.commit()
     print("Permissions created successfully.")
 
-def create_seed_data():
+def create_seed_data(app):
     """Creates initial seed data for the application"""
     with app.app_context():
         # Check if there's already basic data
@@ -257,4 +257,6 @@ def create_leave_types():
     print("Leave types created successfully.")
 
 if __name__ == "__main__":
-    create_seed_data()
+    from app import create_app
+    app = create_app()
+    create_seed_data(app)

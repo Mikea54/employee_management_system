@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+
+{% block title %}Import Employees{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Bulk Import Employees</h1>
+        <div>
+            <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Import Instructions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Import Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>How to import employees:</h5>
+                        <ol>
+                            <li>Download a template file in CSV or Excel format using the buttons below.</li>
+                            <li>Fill in employee data in the downloaded template. Required fields: First Name, Last Name, Email, Hire Date, and Job Title.</li>
+                            <li>Optional: Add department (must match existing department names), manager email (must be an existing employee), phone number, and address.</li>
+                            <li>Upload the completed file using the form below.</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5>Download Templates:</h5>
+                        <a href="{{ url_for('employees.import_template', file_format='csv') }}" class="btn btn-outline-primary mr-2">
+                            <i class="fas fa-file-csv"></i> CSV Template
+                        </a>
+                        <a href="{{ url_for('employees.import_template', file_format='xlsx') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-file-excel"></i> Excel Template
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Form -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Upload File</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="file">Select CSV or Excel File</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="file" name="file" accept=".csv, .xlsx, .xls" required>
+                                <label class="custom-file-label" for="file">Choose file</label>
+                            </div>
+                            <small class="form-text text-muted">Accepted formats: CSV, Excel (.xlsx, .xls)</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload and Import
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Results (if any) -->
+    {% if success_count is defined or error_count is defined %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Import Results</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Successfully Imported</h5>
+                                    <h2 class="card-text">{{ success_count }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-danger text-white mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Errors</h5>
+                                    <h2 class="card-text">{{ error_count }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if errors and errors|length > 0 %}
+                    <div class="mt-4">
+                        <h5>Error Details:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Error Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error in errors %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ error }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Display selected filename in file input
+    $('.custom-file-input').on('change', function() {
+        var fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName);
+    });
+});
+</script>
+{% endblock %}

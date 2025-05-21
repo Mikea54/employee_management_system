@@ -1,0 +1,250 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance Reports - Employee Management System{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .filter-section {
+        background-color: rgba(78, 115, 223, 0.05);
+        border-radius: 5px;
+        padding: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">
+            {% if is_personal %}
+            My Attendance History
+            {% else %}
+            Attendance Reports
+            {% endif %}
+        </h1>
+        <div>
+            <button class="btn btn-secondary" data-export-table="attendanceTable" data-export-format="csv">
+                <i class="fas fa-download me-2"></i> Export CSV
+            </button>
+            {% if not is_personal and current_user.role.name in ['Admin', 'HR'] %}
+            <a href="{{ url_for('attendance.manage_attendance') }}" class="btn btn-primary ml-2">
+                <i class="fas fa-edit"></i> Manage Attendance
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Filters</h6>
+        </div>
+        <div class="card-body filter-section">
+            <form method="get" action="{{ url_for('attendance.my_attendance' if is_personal else 'attendance.reports') }}" class="row g-3">
+                {% if not is_personal %}
+                <!-- Employee Filter -->
+                <div class="col-md-3">
+                    <label for="employee_id" class="form-label">Employee</label>
+                    <select class="form-select" id="employee_id" name="employee_id">
+                        <option value="">All Employees</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}" {% if current_filters and current_filters.employee_id == emp.id %}selected{% endif %}>
+                            {{ emp.full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Department Filter -->
+                <div class="col-md-3">
+                    <label for="department_id" class="form-label">Department</label>
+                    <select class="form-select" id="department_id" name="department_id">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if current_filters and current_filters.department_id == dept.id %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All</option>
+                        <option value="Present" {% if current_filters and current_filters.status == 'Present' %}selected{% endif %}>Present</option>
+                        <option value="Absent" {% if current_filters and current_filters.status == 'Absent' %}selected{% endif %}>Absent</option>
+                        <option value="Late" {% if current_filters and current_filters.status == 'Late' %}selected{% endif %}>Late</option>
+                    </select>
+                </div>
+                {% endif %}
+                
+                <!-- Date Range -->
+                <div class="{% if is_personal %}col-md-8{% else %}col-md-4{% endif %}">
+                    <label for="date_range" class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                        <span class="input-group-text">to</span>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                    </div>
+                </div>
+                
+                <!-- Apply Button -->
+                <div class="col-md-4">
+                    <label class="d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Data Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Attendance Records</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            {% if not is_personal %}
+                            <th>Employee</th>
+                            <th>Department</th>
+                            {% endif %}
+                            <th>Status</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Hours</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if is_personal %}
+                            {% if attendance_records %}
+                                {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge {% if record.status == 'Present' %}bg-success{% elif record.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ record.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.clock_in.strftime('%H:%M:%S') if record.clock_in else 'N/A' }}</td>
+                                    <td>{{ record.clock_out.strftime('%H:%M:%S') if record.clock_out else 'N/A' }}</td>
+                                    <td>
+                                        {% if record.clock_in and record.clock_out %}
+                                        {{ ((record.clock_out - record.clock_in).total_seconds() / 3600) | round(2) }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.notes or '' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No attendance records found for the selected period.</td>
+                                </tr>
+                            {% endif %}
+                        {% else %}
+                            {% if results %}
+                                {% for attendance, employee in results %}
+                                <tr>
+                                    <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('employees.view_profile', id=employee.id) }}">
+                                            {{ employee.full_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ employee.department.name if employee.department else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge {% if attendance.status == 'Present' %}bg-success{% elif attendance.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ attendance.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ attendance.clock_in.strftime('%H:%M:%S') if attendance.clock_in else 'N/A' }}</td>
+                                    <td>{{ attendance.clock_out.strftime('%H:%M:%S') if attendance.clock_out else 'N/A' }}</td>
+                                    <td>
+                                        {% if attendance.clock_in and attendance.clock_out %}
+                                        {{ ((attendance.clock_out - attendance.clock_in).total_seconds() / 3600) | round(2) }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ attendance.notes or '' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No attendance records found for the selected criteria.</td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Period Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Date Range</h5>
+                            <p class="card-text">{{ start_date.strftime('%b %d, %Y') }} to {{ end_date.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-success text-white mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Working Days</h5>
+                            <p class="card-text">
+                                {% if is_personal and business_days is defined %}
+                                    {{ business_days }} days
+                                {% else %}
+                                    Varies by employee
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-info text-white mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Attendance Rate</h5>
+                            <p class="card-text">
+                                {% if is_personal and business_days is defined and business_days > 0 %}
+                                    {{ ((present_days / business_days) * 100) | round(1) }}%
+                                {% elif is_personal %}
+                                    N/A
+                                {% else %}
+                                    Check individual reports
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+{% endblock %}

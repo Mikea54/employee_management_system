@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+
+{% block title %}Request Leave - Employee Management System{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .leave-balance-card {
+        transition: all 0.3s;
+    }
+    .leave-balance-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Request Leave</h1>
+        <div>
+            <a href="{{ url_for('leave.my_requests') }}" class="btn btn-info">
+                <i class="fas fa-list"></i> My Leave Requests
+            </a>
+        </div>
+    </div>
+
+    <!-- Leave Balances Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Available Leave Balances</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if leave_balances %}
+                    {% for balance in leave_balances %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card leave-balance-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ balance.leave_type.name }}</h5>
+                                <div class="d-flex justify-content-between">
+                                    <span>Available:</span>
+                                    <span class="fw-bold">{{ balance.remaining_days }} days</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Used:</span>
+                                    <span>{{ balance.used_days }} days</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Total:</span>
+                                    <span>{{ balance.total_days }} days</span>
+                                </div>
+                                
+                                <!-- Hidden data for JavaScript -->
+                                <div data-leave-type-id="{{ balance.leave_type_id }}" data-balance="{{ balance.remaining_days }}" style="display: none;"></div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="progress mt-3 progress-thin">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (balance.remaining_days / balance.total_days * 100) | round }}%"
+                                         aria-valuenow="{{ balance.remaining_days }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="{{ balance.total_days }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> No leave balances found. Please contact HR.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Request Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Leave Request Form</h6>
+        </div>
+        <div class="card-body">
+            <form id="leaveRequestForm" action="{{ url_for('leave.request_leave') }}" method="post" class="needs-validation" onsubmit="return validateLeaveRequestForm()" novalidate>
+                <div class="row mb-3">
+                    <!-- Leave Type -->
+                    <div class="col-md-4 mb-3">
+                        <label for="leaveTypeId" class="form-label form-required">Leave Type</label>
+                        <select class="form-select" id="leaveTypeId" name="leave_type_id" required>
+                            <option value="" selected disabled>Select Leave Type</option>
+                            {% for leave_type in leave_types %}
+                            <option value="{{ leave_type.id }}">{{ leave_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a leave type.</div>
+                    </div>
+                    
+                    <!-- Start Date -->
+                    <div class="col-md-4 mb-3">
+                        <label for="startDate" class="form-label form-required">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="start_date" required>
+                        <div class="invalid-feedback">Please select a start date.</div>
+                    </div>
+                    
+                    <!-- End Date -->
+                    <div class="col-md-4 mb-3">
+                        <label for="endDate" class="form-label form-required">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date" required>
+                        <div class="invalid-feedback">End date must be after or equal to start date.</div>
+                    </div>
+                    
+                    <!-- Hours Count Display -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Hours Requested</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                            <div class="form-control bg-light">
+                                <span id="leaveHours">0</span> hours (<span id="leaveDays">0</span> day(s))
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Partial Day Hours Input -->
+                    <div class="col-md-6 mb-3" id="partialHoursWrapper" style="display: none;">
+                        <label for="hoursInput" class="form-label">Hours (for partial day)</label>
+                        <input type="number" step="0.5" min="0.5" max="8" class="form-control" id="hoursInput" name="hours" value="8">
+                    </div>
+                    
+                    <!-- Leave Balance Display -->
+                    <div class="col-md-6 mb-3" style="display: none;">
+                        <label class="form-label">Available Balance</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-balance-scale"></i></span>
+                            <div class="form-control bg-light">
+                                <span id="leaveBalance">0</span> hours
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Warning Message for Insufficient Balance -->
+                    <div class="col-12 mb-3">
+                        <div id="leaveBalanceWarning" class="alert alert-warning" style="display: none;">
+                            Warning: Requested hours exceed your available balance.
+                        </div>
+                    </div>
+                    
+                    <!-- Reason -->
+                    <div class="col-12 mb-3">
+                        <label for="reason" class="form-label form-required">Reason for Leave</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                        <div class="invalid-feedback">Please provide a reason for your leave request.</div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Leave Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave Policy Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Leave Policy Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> Please review the leave policy guidelines below.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">Leave Request Guidelines:</h5>
+                    <ul>
+                        <li>Submit leave requests at least 3 working days in advance.</li>
+                        <li>Emergency leaves may require additional documentation.</li>
+                        <li>Leave requests are subject to manager approval.</li>
+                        <li>Consecutive leave periods exceeding 5 working days need special approval.</li>
+                        <li>Leave balances are updated at the beginning of each calendar year.</li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5 class="mb-3">Leave Types:</h5>
+                    <ul>
+                        <li><strong>Annual Leave:</strong> Regular paid time off for vacation or personal matters.</li>
+                        <li><strong>Sick Leave:</strong> Time off due to illness or medical appointments.</li>
+                        <li><strong>Personal Leave:</strong> Additional days for personal emergencies.</li>
+                        <li><strong>Maternity/Paternity Leave:</strong> Time off for new parents.</li>
+                        <li><strong>Bereavement Leave:</strong> Time off following the death of a family member.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leave.js') }}"></script>
+{% endblock %}

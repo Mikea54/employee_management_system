@@ -1,0 +1,277 @@
+{% extends "layout.html" %}
+
+{% block title %}View Payroll Period{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-light">Payroll Period Details</h1>
+        <div>
+            {% if period.status == 'Draft' %}
+            <a href="{{ url_for('payroll.process_period', period_id=period.id) }}" class="btn btn-warning">
+                <i class="fas fa-cogs"></i> Process Period
+            </a>
+            <a href="{{ url_for('payroll.update_period', period_id=period.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Period
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('payroll.payroll_periods') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Periods
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Period Information -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Period Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-{{ 'success' if period.status == 'Completed' else 'warning' if period.status == 'Processing' else 'secondary' }} mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="alert-heading mb-0">{{ period.status }}</h5>
+                            {% if period.status == 'Processing' and current_user.role and current_user.role.name in ['Admin', 'HR'] %}
+                            <a href="{{ url_for('payroll.complete_period', period_id=period.id) }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i> Mark Completed
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <strong>Start Date:</strong>
+                        </div>
+                        <div class="col-md-7">
+                            {{ period.start_date|format_date }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <strong>End Date:</strong>
+                        </div>
+                        <div class="col-md-7">
+                            {{ period.end_date|format_date }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <strong>Payment Date:</strong>
+                        </div>
+                        <div class="col-md-7">
+                            {{ period.payment_date|format_date }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <strong>Period Length:</strong>
+                        </div>
+                        <div class="col-md-7">
+                            {{ (period.end_date - period.start_date).days + 1 }} days
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <strong>Created:</strong>
+                        </div>
+                        <div class="col-md-7">
+                            {{ period.created_at|format_date('%b %d, %Y %H:%M') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Period Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Period Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Total Payslips:</strong>
+                        </div>
+                        <div class="col-md-6">
+                            {{ payslips|length if payslips else 0 }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Total Gross:</strong>
+                        </div>
+                        <div class="col-md-6">
+                            ${{ "{:,.2f}".format(total_gross) }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Total Tax:</strong>
+                        </div>
+                        <div class="col-md-6">
+                            ${{ "{:,.2f}".format(total_tax) }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Total Deductions:</strong>
+                        </div>
+                        <div class="col-md-6">
+                            ${{ "{:,.2f}".format(total_deductions) }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Total Net Pay:</strong>
+                        </div>
+                        <div class="col-md-6 fw-bold text-success">
+                            ${{ "{:,.2f}".format(total_net) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Department Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Department Summary</h6>
+                </div>
+                <div class="card-body">
+                    {% if departments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>Employees</th>
+                                        <th>Gross Pay</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dept_name, dept_data in departments.items() %}
+                                    <tr>
+                                        <td>{{ dept_name }}</td>
+                                        <td>{{ dept_data['count'] }}</td>
+                                        <td>${{ "{:,.2f}".format(dept_data['total_gross']) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No department data available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payslips -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Payslips</h6>
+                    {% if period.status == 'Draft' %}
+                    <div>
+                        <a href="{{ url_for('payroll.generate_all_payslips', period_id=period.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-file-invoice-dollar"></i> Generate All Payslips
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if payslips %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="payslips-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Gross Pay</th>
+                                        <th>Tax</th>
+                                        <th>Net Pay</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payslip in payslips %}
+                                    <tr>
+                                        <td>{{ payslip.employee.full_name }}</td>
+                                        <td>{{ payslip.employee.department.name }}</td>
+                                        <td>${{ "{:,.2f}".format(payslip.gross_pay) }}</td>
+                                        <td>${{ "{:,.2f}".format(payslip.tax_amount) }}</td>
+                                        <td>${{ "{:,.2f}".format(payslip.net_pay) }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if payslip.status == 'Paid' else 'primary' if payslip.status == 'Approved' else 'info' if payslip.status == 'Pending' else 'secondary' }}">
+                                                {{ payslip.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{{ url_for('payroll.view_payslip', payroll_id=payslip.id) }}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if period.status != 'Completed' %}
+                                                <a href="{{ url_for('payroll.edit_payslip', payroll_id=payslip.id) }}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% endif %}
+                                                <a href="{{ url_for('payroll.download_payslip', payroll_id=payslip.id) }}" class="btn btn-sm btn-secondary">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No payslips found for this period.
+                            
+                            {% if period.status == 'Draft' %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('payroll.process_period', period_id=period.id) }}" class="btn btn-warning">
+                                    <i class="fas fa-cogs"></i> Process Period to Generate Payslips
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable for payslips table
+        if (document.getElementById('payslips-table')) {
+            $('#payslips-table').DataTable({
+                pageLength: 25,
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
