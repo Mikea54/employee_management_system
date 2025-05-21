@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block title %}Salary Components{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">Salary Components</h1>
+    <div class="card shadow">
+        <div class="card-body">
+            {% if components %}
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comp in components %}
+                    <tr>
+                        <td>{{ comp.employee.full_name if comp.employee else '' }}</td>
+                        <td>{{ comp.name }}</td>
+                        <td>{{ comp.type.name }}</td>
+                        <td>{{ comp.amount | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No components found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

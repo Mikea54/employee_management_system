@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Generate Compensation Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">Generate Compensation Report</h1>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Report Name</label>
+                    <input type="text" name="report_name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Report Type</label>
+                    <select name="report_type" class="form-select">
+                        <option value="department">By Department</option>
+                        <option value="job_title">By Job Title</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Department</label>
+                    <select name="department_id" class="form-select">
+                        <option value="">All</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="include_benefits" id="benefits">
+                    <label class="form-check-label" for="benefits">Include Benefits</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="include_bonuses" id="bonuses">
+                    <label class="form-check-label" for="bonuses">Include Bonuses</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate</button>
+                <a href="{{ url_for('payroll.compensation_reports') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

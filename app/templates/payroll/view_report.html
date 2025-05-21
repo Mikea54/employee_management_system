@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Compensation Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">{{ report.name or 'Compensation Report' }}</h1>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            {% if report_data %}
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Total Compensation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr>
+                        <td>{{ row.employee.full_name }}</td>
+                        <td>{{ row.department }}</td>
+                        <td>{{ row.position }}</td>
+                        <td>{{ row.total_compensation | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="fw-bold">Base: {{ total_base | round(2) }} | Bonus: {{ total_bonus | round(2) }} | Benefits: {{ total_benefits | round(2) }} | Total: {{ total_comp | round(2) }}</p>
+            {% else %}
+            <p class="text-muted">No data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

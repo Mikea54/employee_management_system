@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Compensation Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">Compensation Reports</h1>
+    <div class="card shadow">
+        <div class="card-body">
+            {% if report_data %}
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>{{ 'Department' if report_type == 'department' else 'Job Title' }}</th>
+                        <th>Employees</th>
+                        <th>Total Base Pay</th>
+                        <th>Total Bonus</th>
+                        <th>Total Benefits</th>
+                        <th>Total Compensation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr>
+                        <td>{{ row.category }}</td>
+                        <td>{{ row.employee_count }}</td>
+                        <td>{{ row.total_base_pay | round(2) }}</td>
+                        <td>{{ row.total_bonus | round(2) }}</td>
+                        <td>{{ row.total_benefits | round(2) }}</td>
+                        <td>{{ row.total_compensation | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td>Totals</td>
+                        <td>{{ grand_total.employee_count }}</td>
+                        <td>{{ grand_total.total_base_pay | round(2) }}</td>
+                        <td>{{ grand_total.total_bonus | round(2) }}</td>
+                        <td>{{ grand_total.total_benefits | round(2) }}</td>
+                        <td>{{ grand_total.total_compensation | round(2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            {% else %}
+            <p class="text-muted">No data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
