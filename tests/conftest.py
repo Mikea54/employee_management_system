@@ -1,7 +1,21 @@
 import os
+import sys
+import types
 import pytest
-from app import create_app, db
 import sqlalchemy
+
+# Provide a lightweight pandas stub so create_app imports succeed even when
+# the real pandas dependency is unavailable in the execution environment.
+sys.modules.setdefault(
+    "pandas",
+    types.SimpleNamespace(read_csv=lambda *a, **k: None, read_excel=lambda *a, **k: None),
+)
+
+# Ensure a default in-memory database is used when the app module is imported.
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("SESSION_SECRET", "testing")
+
+from app import create_app, db
 from models import Role, User
 
 @pytest.fixture()
