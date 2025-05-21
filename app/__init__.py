@@ -1,5 +1,6 @@
 import os
 import logging
+from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
@@ -13,6 +14,9 @@ class Base(DeclarativeBase):
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+# Load environment variables from a .env file if present
+load_dotenv()
 
 # Extensions
 db = SQLAlchemy(model_class=Base)
