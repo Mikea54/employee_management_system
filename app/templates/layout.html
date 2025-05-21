@@ -47,11 +47,14 @@
     <a href="{{ url_for('employees.list_employees') }}"><i class="fas fa-users"></i> Employees</a>
     <a href="{{ url_for('employees.contact_list') }}"><i class="fas fa-address-book"></i> Contact List</a>
     <a href="{{ url_for('attendance.index') }}"><i class="fas fa-clock"></i> Attendance</a>
+    <a href="{{ url_for('attendance.reports') }}"><i class="fas fa-chart-bar"></i> Attendance Reports</a>
     <a href="{{ url_for('timesheets.index') }}"><i class="fas fa-clipboard-list"></i> Timesheets</a>
     <a href="{{ url_for('payroll.index') }}"><i class="fas fa-money-bill-alt"></i> Payroll</a>
     <a href="{{ url_for('budgeting.index') }}"><i class="fas fa-wallet"></i> Budgeting</a>
     <a href="{{ url_for('leave.my_requests') }}"><i class="fas fa-calendar-alt"></i> My Leave</a>
     <a href="{{ url_for('leave.pending_approvals') }}"><i class="fas fa-clock"></i> Leave Approvals</a>
+    <a href="{{ url_for('leave.manage') }}"><i class="fas fa-list"></i> Manage Leave</a>
+    <a href="{{ url_for('leave.manage_balances') }}"><i class="fas fa-balance-scale"></i> Leave Balances</a>
     <a href="{{ url_for('documents.index') }}"><i class="fas fa-file-alt"></i> Documents</a>
     <a href="{{ url_for('organization.index') }}"><i class="fas fa-sitemap"></i> Organization Chart</a>
     <a href="{{ url_for('admin.department_settings') }}"><i class="fas fa-cog"></i> Department Management</a>
