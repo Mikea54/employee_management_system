@@ -4,7 +4,7 @@ import pytest
 
 # Configure app to use in-memory SQLite before importing
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
+os.environ['SECRET_KEY'] = 'testing'
 
 from app import create_app, db
 from models import Role, User, Employee, EmployeeCompensation, PayPeriod, Payroll, PayrollEntry

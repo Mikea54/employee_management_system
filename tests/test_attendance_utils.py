@@ -3,18 +3,19 @@ import datetime
 import sqlalchemy
 import pytest
 
+# Set environment for testing
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
+os.environ['SECRET_KEY'] = 'testing-secret'
 
-import app
-from app import db
+from app import create_app, db
 from models import Employee, PayPeriod, Timesheet, Attendance, TimeEntry
-from routes.timesheets import populate_timesheet_from_attendance
+from routes.timesheets import populate_timesheet_from_attendance, calculate_hours_from_attendance
 
+app = create_app()
 
 @pytest.fixture()
 def setup_env():
-    app.app.config.update(
+    app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         SQLALCHEMY_ENGINE_OPTIONS={
@@ -22,7 +23,7 @@ def setup_env():
             'poolclass': sqlalchemy.pool.StaticPool,
         },
     )
-    with app.app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
 
@@ -49,7 +50,10 @@ def setup_env():
         db.session.add(timesheet)
         db.session.commit()
 
+        # Add two attendance records
         day1 = period.start_date
+        day2 = day1 + datetime.timedelta(days=1)
+
         att1 = Attendance(
             employee_id=employee.id,
             date=day1,
@@ -57,7 +61,6 @@ def setup_env():
             clock_out=datetime.datetime.combine(day1, datetime.time(17, 0)),
             status='Present'
         )
-        day2 = day1 + datetime.timedelta(days=1)
         att2 = Attendance(
             employee_id=employee.id,
             date=day2,
@@ -68,15 +71,14 @@ def setup_env():
         db.session.add_all([att1, att2])
         db.session.commit()
 
-        yield timesheet, period
+        yield employee, timesheet, period
 
         db.session.remove()
         db.drop_all()
 
-
 def test_populate_timesheet_from_attendance(setup_env):
-    timesheet, period = setup_env
-    with app.app.app_context():
+    employee, timesheet, period = setup_env
+    with app.app_context():
         assert TimeEntry.query.count() == 0
         updated = populate_timesheet_from_attendance(timesheet)
         assert updated is True
@@ -88,3 +90,33 @@ def test_populate_timesheet_from_attendance(setup_env):
         db.session.refresh(timesheet)
         assert timesheet.total_hours == 16.0
 
+def test_calculate_hours_from_attendance(setup_env):
+    employee, *_ = setup_env
+    base_date = datetime.date.today()
+    with app.app_context():
+        # No attendance record
+        hours = calculate_hours_from_attendance(employee.id, base_date - datetime.timedelta(days=10))
+        assert hours == 0.0
+
+        # Status Present without clock-in/out
+        att = Attendance(
+            employee_id=employee.id,
+            date=base_date + datetime.timedelta(days=3),
+            status='Present'
+        )
+        db.session.add(att)
+        db.session.commit()
+        hours = calculate_hours_from_attendance(employee.id, att.date)
+        assert hours == 8.0
+
+        # Clocked entry with exact times
+        att2 = Attendance(
+            employee_id=employee.id,
+            date=base_date + datetime.timedelta(days=4),
+            clock_in=datetime.datetime.combine(base_date, datetime.time(9, 0)),
+            clock_out=datetime.datetime.combine(base_date, datetime.time(17, 30))
+        )
+        db.session.add(att2)
+        db.session.commit()
+        hours = calculate_hours_from_attendance(employee.id, att2.date)
+        assert hours == 8.5
