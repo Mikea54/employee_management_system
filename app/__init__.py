@@ -2,15 +2,11 @@ import os
 import logging
 from dotenv import load_dotenv
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
+
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_login import LoginManager
 from utils.filters import format_currency, format_date
 
-
-class Base(DeclarativeBase):
-    pass
+from app.extensions import db, login_manager
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,9 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Load environment variables from a .env file if present
 load_dotenv()
 
-# Extensions
-db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
+# Extensions are defined in app.extensions
 
 
 def create_app(config_object=None):
