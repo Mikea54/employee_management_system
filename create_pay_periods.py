@@ -2,17 +2,19 @@
 Script to create initial pay periods for the timesheet system.
 """
 from datetime import datetime, timedelta
-from app import app, db
+from flask import current_app
+from app import db
 from models import PayPeriod
 
-def create_initial_pay_periods(start_date_str=None):
+def create_initial_pay_periods(start_date_str=None, app=None):
     """Create initial pay periods for the timesheet system.
     
     Args:
         start_date_str: Optional start date in 'YYYY-MM-DD' format.
                       If not provided, will use the first Monday of the current year.
     """
-    with app.app_context():
+    target_app = app or current_app
+    with target_app.app_context():
         # Check if there are existing pay periods
         existing_count = PayPeriod.query.count()
         if existing_count > 0:
@@ -83,4 +85,6 @@ def create_initial_pay_periods(start_date_str=None):
             print(f"Period {period.id}: {period.start_date} to {period.end_date} - {status_str}")
 
 if __name__ == "__main__":
-    create_initial_pay_periods()
+    from app import create_app
+    app = create_app()
+    create_initial_pay_periods(app=app)
