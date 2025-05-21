@@ -4,7 +4,7 @@ import sqlalchemy
 import pytest
 
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
+os.environ['SECRET_KEY'] = 'testing'
 
 from app import create_app, db
 from models import Role, User, Employee, CompensationReport
