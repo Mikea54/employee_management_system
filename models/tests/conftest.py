@@ -7,7 +7,7 @@ from models import Role, User
 @pytest.fixture()
 def app():
     os.environ.setdefault('DATABASE_URL', 'sqlite:///:memory:')
-    os.environ.setdefault('SESSION_SECRET', 'testing')
+    os.environ.setdefault('SECRET_KEY', 'testing')
     app = create_app({
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',

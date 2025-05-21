@@ -4,7 +4,7 @@ from flask import url_for
 
 # Configure in-memory SQLite before importing app
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-os.environ['SESSION_SECRET'] = 'testing'
+os.environ['SECRET_KEY'] = 'testing'
 
 from app import create_app, db
 from models import User
