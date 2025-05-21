@@ -1,9 +1,9 @@
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, jsonify, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError
-from app import app, db
+from app import db
 from models import Document, Employee, DocumentType
 from utils.helpers import role_required, allowed_file, save_document
 
@@ -130,7 +130,7 @@ def upload_document():
             
             # Save file
             if file and allowed_file(file.filename):
-                filename = save_document(file, app.config['UPLOAD_FOLDER'])
+                filename = save_document(file, current_app.config['UPLOAD_FOLDER'])
                 
                 if filename:
                     # We don't need to check document type ID since we don't have that column
@@ -200,7 +200,7 @@ def download_document(document_id):
             return redirect(url_for('documents.index'))
     
     try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], document.file_path)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], document.file_path)
         if os.path.exists(file_path):
             return send_file(
                 file_path,
@@ -223,7 +223,7 @@ def delete_document(document_id):
     
     try:
         # Delete file from filesystem
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], document.file_path)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], document.file_path)
         if os.path.exists(file_path):
             os.remove(file_path)
         
