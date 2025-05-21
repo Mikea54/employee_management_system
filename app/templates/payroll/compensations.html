@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Employee Compensations{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-light">Employee Compensations</h1>
+    <div class="card shadow">
+        <div class="card-body">
+            {% if results %}
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Annual Salary</th>
+                        <th>Total Bonuses</th>
+                        <th>Total Benefits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp, comp in results %}
+                    <tr>
+                        <td>{{ emp.full_name }}</td>
+                        <td>{{ comp.annual_salary | round(2) }}</td>
+                        <td>{{ comp.total_bonus | round(2) }}</td>
+                        <td>{{ comp.total_benefits | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="fw-bold">Total Salary: {{ total_salary | round(2) }} | Total Compensation: {{ total_compensation | round(2) }}</p>
+            {% else %}
+            <p class="text-muted">No compensation data.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
